@@ -191,9 +191,9 @@ def make_image(now: datetime) -> bytes:
 
     section_y = top_y + th + 16 + dh + 70
     blocks = [
-        (f"Yıl {now.year}", yp),
-        (f"Ay {tr_month_name(now.month)}", mp),
-        ("Gün", dp),
+        (f"{now.year}", yp),
+        (f"{now.day} {tr_month_name(now.month)}", mp),
+        ({tr_weekday_name(now.weekday())} {now.hour:02d}:{now.second:02d}, dp),
     ]
 
     for idx, (label, p) in enumerate(blocks):
