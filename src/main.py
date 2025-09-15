@@ -122,12 +122,19 @@ def percent_str(p: float, digits: int = 1) -> str:
 
 def make_image(now: datetime) -> bytes:
     """
-    1080x1350 dikey görsel oluşturur (Instagram/Twitter için uygun boy).
+    1080x1350 dikey görsel oluşturur (Instagram/X için uygun).
     Üstte başlık ve tarih; altta Yıl / Ay / Gün için 100 dilimlik progress bar'lar.
+    Pillow 10+ uyumlu (textsize yerine textbbox kullanır).
     """
     W, H = 1080, 1350
     img = Image.new("RGB", (W, H), color=(248, 250, 252))
     draw = ImageDraw.Draw(img)
+
+    # Küçük yardımcı: metin boyutunu textbbox ile hesapla
+    def text_wh(txt: str, font: ImageFont.ImageFont) -> tuple[int, int]:
+        # bbox: (left, top, right, bottom)
+        l, t, r, b = draw.textbbox((0, 0), txt, font=font)
+        return (r - l, b - t)
 
     # Yazı tipleri
     title_font   = load_font(72)
@@ -144,12 +151,12 @@ def make_image(now: datetime) -> bytes:
 
     # Başlık
     title = "Zaman İlerlemesi — İstanbul"
-    tw, th = draw.textsize(title, font=title_font)
+    tw, th = text_wh(title, title_font)
     draw.text(((W - tw) / 2, top_y), title, fill=(20, 24, 28), font=title_font)
 
     # Tarih-saat
     date_str = now.strftime("%Y-%m-%d %H:%M:%S %Z")
-    dw, dh = draw.textsize(date_str, font=date_font)
+    dw, dh = text_wh(date_str, date_font)
     draw.text(((W - dw) / 2, top_y + th + 20), date_str, fill=(80, 90, 100), font=date_font)
 
     # Progress hesapları
@@ -160,7 +167,7 @@ def make_image(now: datetime) -> bytes:
     # Bölüm başlıkları ve barlar
     section_y = top_y + th + 20 + dh + 100
 
-    blocks: list[Tuple[str, float]] = [
+    blocks: list[tuple[str, float]] = [
         (f"Yıl {now.year}", yp),
         (now.strftime("Ay %B"), mp),
         ("Gün", dp),
@@ -170,35 +177,38 @@ def make_image(now: datetime) -> bytes:
         y = section_y + idx * (bar_h + 2 * line_gap + 30)
 
         # Etiket
-        lw, lh = draw.textsize(label, font=label_font)
+        lw, lh = text_wh(label, label_font)
         draw.text((margin_x, y), label, fill=(30, 34, 40), font=label_font)
 
         # Yüzde değeri (sağa hizalı)
         val = percent_str(p, digits=2)
-        vw, vh = draw.textsize(val, font=value_font)
+        vw, vh = text_wh(val, value_font)
         draw.text((W - margin_x - vw, y), val, fill=(30, 34, 40), font=value_font)
 
         # Bar
         bar_y = y + lh + 20
-        draw_progress_bar(draw,
-                          x=margin_x,
-                          y=bar_y,
-                          width=W - 2 * margin_x,
-                          height=bar_h,
-                          progress=p,
-                          segments=100,
-                          pad=6,
-                          radius=12)
+        draw_progress_bar(
+            draw,
+            x=margin_x,
+            y=bar_y,
+            width=W - 2 * margin_x,
+            height=bar_h,
+            progress=p,
+            segments=100,
+            pad=6,
+            radius=12
+        )
 
     # Alt bilgi
     footer = "Yıl/Ay/Gün ilerlemeleri 100 dilimlik çubuklarla görselleştirilmiştir."
-    fw, fh = draw.textsize(footer, font=foot_font)
+    fw, fh = text_wh(footer, foot_font)
     draw.text(((W - fw) / 2, H - fh - 60), footer, fill=(90, 100, 110), font=foot_font)
 
     # PNG baytları
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
     return buf.getvalue()
+
 
 # ---- X (Twitter) API: medya yükleme + tweet ----------------------------------
 
