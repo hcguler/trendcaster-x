@@ -82,7 +82,7 @@ def tr_weekday_name(wd: int) -> str:
 
 def format_tr_datetime_line(dt: datetime) -> str:
     # dd.MM.yyyy HH:ss (günadı) — dakika yerine saniye istendi
-    return f"{dt.day:02d}.{dt.month:02d}.{dt.year:04d} {dt.hour:02d}:{dt.second:02d} ({tr_weekday_name(dt.weekday())})"
+    return f"{dt.day:02d}.{dt.month:02d}.{dt.year:04d} ({tr_weekday_name(dt.weekday())}) {dt.hour:02d}:{dt.second:02d}"
 
 # -------------------- Env / OAuth --------------------
 def require_env(keys: List[str]) -> dict:
@@ -193,7 +193,7 @@ def make_image(now: datetime) -> bytes:
     blocks = [
         (f"{now.year}", yp),
         (f"{now.day} {tr_month_name(now.month)}", mp),
-        (f"{tr_weekday_name(now.weekday())} {now.hour:02d}:{now.minute:02d}", dp),
+        (f"{now.hour:02d}:{now.minute:02d} {tr_weekday_name(now.weekday())}", dp),
     ]
 
     for idx, (label, p) in enumerate(blocks):
@@ -250,7 +250,7 @@ def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
         random.choice(CATCHY_TITLES),  # 20 başlıktan rastgele biri
         f"• {now.year}: {percent_str(yp, 2)}",
         f"• {now.day} {tr_month_name(now.month)}: {percent_str(mp, 2)}",
-        f"• {tr_weekday_name(now.weekday())} {now.hour:02d}:{now.minute:02d}: {percent_str(dp, 2)}",
+        f"• {now.hour:02d}:{now.minute:02d} {tr_weekday_name(now.weekday())}: {percent_str(dp, 2)}",
         f"Beni takip etmeyi unutma {OWNER_HANDLE}",
     ]
     text = "\n".join(lines)
