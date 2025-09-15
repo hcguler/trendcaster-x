@@ -248,9 +248,9 @@ def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
     # Konumsuz, emojisiz, Türkçe ay adıyla
     lines = [
         random.choice(CATCHY_TITLES),  # 20 başlıktan rastgele biri
-        f"• {now.year} (YIL): {percent_str(yp, 2)}",
-        f"• {tr_month_name(now.month)} (AY): {percent_str(mp, 2)}",
-        f"• {tr_weekday_name(now.weekday())} (GÜN): {percent_str(dp, 2)}",
+        f"• {now.year}: {percent_str(yp, 2)}",
+        f"• {tr_month_name(now.month)}: {percent_str(mp, 2)}",
+        f"• {tr_weekday_name(now.weekday())} {now.hour:02d}:{now.second:02d}: {percent_str(dp, 2)}",
         f"Beni takip etmeyi unutma {OWNER_HANDLE}",  # footer
     ]
     text = "\n".join(lines)
