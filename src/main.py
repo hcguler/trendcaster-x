@@ -3,55 +3,79 @@ import sys
 from datetime import datetime, timezone, timedelta
 from typing import List
 from requests_oauthlib import OAuth1Session
+import httpx
+import feedparser
 
-# ---- read-only fetch deps
+# pytrends yedek amaçlı; yoksa hatayı yumuşat
 try:
     from pytrends.request import TrendReq
-    import httpx
-except Exception as e:
-    print("Bağımlılık hatası:", e, file=sys.stderr)
-    print("requirements.txt içine 'pytrends' ve 'httpx' eklediğinden emin ol.", file=sys.stderr)
-    sys.exit(1)
+except Exception:
+    TrendReq = None  # opsiyonel
 
 POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
-TR_WOEID = 23424969  # Türkiye (Twitter Trends v1.1)
+TR_WOEID = 23424969  # Türkiye
 
 # ------------------ helpers ------------------
 def istanbul_now_iso():
     tz_tr = timezone(timedelta(hours=3))
     return datetime.now(tz_tr).isoformat(timespec="seconds")
 
+# ---- GOOGLE TRENDS: Önce RSS, olmazsa pytrends fallback ----
 def get_google_trends_tr(limit: int = 5) -> List[str]:
+    topics = []
+    # 1) RSS (daha stabil)
+    rss_url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=TR"
+    try:
+        with httpx.Client(timeout=20) as client:
+            r = client.get(rss_url, headers={"User-Agent": "Mozilla/5.0"})
+            r.raise_for_status()
+            feed = feedparser.parse(r.text)
+            for e in feed.entries[:limit]:
+                title = (e.title or "").strip()
+                if title:
+                    topics.append(title)
+    except Exception as e:
+        print(f"[WARN] Google Trends RSS okunamadı: {e}", file=sys.stderr)
+
+    if topics:
+        return topics[:limit]
+
+    # 2) Fallback: pytrends
+    if TrendReq is None:
+        print("[WARN] pytrends yok; Google Trends fallback atlandı.", file=sys.stderr)
+        return []
     try:
         pytrends = TrendReq(hl="tr-TR", tz=180)
-        df = pytrends.trending_searches(pn="turkey")
-        topics = df[0].tolist()
-        return [t for t in topics if isinstance(t, str)][:limit]
+        df = pytrends.trending_searches(pn="turkey")  # bazen 404 verebiliyor
+        arr = [x for x in df[0].tolist() if isinstance(x, str)]
+        return arr[:limit]
     except Exception as e:
-        print(f"[WARN] Google Trends alınamadı: {e}", file=sys.stderr)
+        print(f"[WARN] Google Trends (pytrends) alınamadı: {e}", file=sys.stderr)
         return []
 
-def get_twitter_trends_tr(bearer_token: str, limit: int = 5) -> List[str]:
-    if not bearer_token:
-        print("[INFO] X_BEARER_TOKEN yok, Twitter trendleri atlanacak.", file=sys.stderr)
-        return []
-    url = f"https://api.twitter.com/1.1/trends/place.json?id={TR_WOEID}"
-    headers = {"Authorization": f"Bearer {bearer_token}"}
+# ---- TWITTER TRENDS: OAuth1 ile v1.1 trends/place ----
+def get_twitter_trends_tr_oauth1(
+    api_key: str, api_secret: str, access_token: str, access_secret: str, limit: int = 5
+) -> List[str]:
     try:
-        with httpx.Client(timeout=30) as client:
-            r = client.get(url, headers=headers)
-            r.raise_for_status()
-            data = r.json()
-            trends = data[0].get("trends", []) if data else []
-            names = [t.get("name") for t in trends if isinstance(t.get("name"), str)]
-            # Hashtaglerin başındaki # kalsın, ama None'ları filtrele
-            return names[:limit]
+        oauth = OAuth1Session(
+            api_key,
+            client_secret=api_secret,
+            resource_owner_key=access_token,
+            resource_owner_secret=access_secret
+        )
+        url = f"https://api.twitter.com/1.1/trends/place.json?id={TR_WOEID}"
+        resp = oauth.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+        trends = data[0].get("trends", []) if data else []
+        names = [t.get("name") for t in trends if isinstance(t.get("name"), str)]
+        return names[:limit]
     except Exception as e:
-        print(f"[WARN] Twitter trends (v1.1) alınamadı: {e}", file=sys.stderr)
+        print(f"[WARN] Twitter trends alınamadı (OAuth1): {e}", file=sys.stderr)
         return []
 
 def build_trend_tweet(google_topics: List[str], twitter_topics: List[str]) -> str:
-    # Boşlukları temizle, yinelenenleri azalt
     g = [t.strip() for t in google_topics if t and t.strip()]
     t = [x.strip() for x in twitter_topics if x and x.strip()]
 
@@ -60,11 +84,8 @@ def build_trend_tweet(google_topics: List[str], twitter_topics: List[str]) -> st
     t_line = "🐦 Twitter: " + (", ".join(t) if t else "—")
 
     text = f"{header}\n{g_line}\n{t_line}"
-    # 280 sınırı: kelime ortasında kesme yerine nazik kırpma
     if len(text) > 280:
-        # sonda üç nokta payı bırak
-        text = text[:277].rstrip()
-        text += "..."
+        text = text[:277].rstrip() + "..."
     return text
 
 def post_tweet_oauth1(tweet_text: str):
@@ -93,9 +114,6 @@ def post_tweet_oauth1(tweet_text: str):
     resp = oauth.post(POST_TWEET_ENDPOINT, json={"text": tweet_text})
     if resp.status_code >= 400:
         print("X API Hatası:", resp.status_code, resp.text, file=sys.stderr)
-        # Yaygın sorunlar:
-        # 403 oauth1-permissions -> App perms Read/Write değil ya da access token eski
-        # 401 -> anahtarlar hatalı
         sys.exit(2)
 
     data = resp.json()
@@ -105,21 +123,28 @@ def post_tweet_oauth1(tweet_text: str):
 
 # ------------------ main ------------------
 def main():
-    # 1) Trendleri topla
+    # Google ve Twitter trendlerini çek
     google5 = get_google_trends_tr(limit=5)
-    twitter5 = get_twitter_trends_tr(os.environ.get("X_BEARER_TOKEN"), limit=5)
+
+    # OAuth1 secret'larını al (Twitter trendleri için de kullanacağız)
+    api_key = os.environ.get("TWITTER_API_KEY")
+    api_secret = os.environ.get("TWITTER_API_SECRET")
+    access_token = os.environ.get("TWITTER_ACCESS_TOKEN")
+    access_secret = os.environ.get("TWITTER_ACCESS_TOKEN_SECRET")
+
+    twitter5 = []
+    if all([api_key, api_secret, access_token, access_secret]):
+        twitter5 = get_twitter_trends_tr_oauth1(api_key, api_secret, access_token, access_secret, limit=5)
+    else:
+        print("[WARN] OAuth1 env eksik; Twitter trendleri atlanacak.", file=sys.stderr)
 
     if not google5 and not twitter5:
-        # Yine de bir şey atsın istersek timestamp'li fallback
         fallback = f"Deneme tweeti — {istanbul_now_iso()}"
         print("[WARN] Hiç trend çekilemedi, fallback metin kullanılacak.", file=sys.stderr)
         post_tweet_oauth1(fallback)
         return
 
-    # 2) Tweet metnini hazırla
     tweet_text = build_trend_tweet(google5, twitter5)
-
-    # 3) Gönder
     post_tweet_oauth1(tweet_text)
 
 if __name__ == "__main__":
