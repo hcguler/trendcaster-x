@@ -1,14 +1,12 @@
-import os
-import sys
-import re
+import os, sys, re
 from datetime import datetime, timezone, timedelta
 from typing import List
 from requests_oauthlib import OAuth1Session
+import httpx
+from bs4 import BeautifulSoup
 
-# ---- Sabitler ----
 POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
-TRENDS_PLACE_ENDPOINT = "https://api.twitter.com/1.1/trends/place.json"
-TR_WOEID_DEFAULT = 23424969  # Türkiye
+TRENDS24_URL = os.environ.get("TRENDS24_URL", "https://trends24.in/turkey/")  # ülke/şehir sayfası
 
 def istanbul_now_iso() -> str:
     tz_tr = timezone(timedelta(hours=3))
@@ -16,7 +14,7 @@ def istanbul_now_iso() -> str:
 
 def require_env(keys: List[str]) -> dict:
     envs = {k: os.environ.get(k) for k in keys}
-    missing = [k for k, v in envs.items() if not v]
+    missing = [k for k,v in envs.items() if not v]
     if missing:
         print(f"HATA: Eksik secret(lar): {', '.join(missing)}", file=sys.stderr)
         sys.exit(1)
@@ -36,33 +34,33 @@ def oauth1_session_from_env() -> OAuth1Session:
         resource_owner_secret=envs["TWITTER_ACCESS_TOKEN_SECRET"],
     )
 
-def get_twitter_trends_oauth1(woeid: int = TR_WOEID_DEFAULT, limit: int = 5) -> List[str]:
-    """
-    v1.1 trends/place ile ülke/bölge trendlerini çeker.
-    Not: Bu uç noktayı kullanmak için hesabın plan/izinleri yeterli olmalıdır.
-    """
-    oauth = oauth1_session_from_env()
-    resp = oauth.get(TRENDS_PLACE_ENDPOINT, params={"id": str(woeid)})
-    if resp.status_code >= 400:
-        print("X API Hatası (trends/place):", resp.status_code, resp.text, file=sys.stderr)
-        # Sık görülen: 403 -> plan/izin yetersizliği
+def get_trends_from_trends24(limit: int = 5) -> List[str]:
+    """Trends24 sayfasını parse eder ve ilk 5 trendi döner."""
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        with httpx.Client(timeout=20) as client:
+            r = client.get(TRENDS24_URL, headers=headers)
+            r.raise_for_status()
+            soup = BeautifulSoup(r.text, "html.parser")
+            # En üst karttaki trendleri al: genellikle ilk ".trend-card" bloğu
+            card = soup.select_one(".trend-card")
+            items = (card.select(".trend-card__list li a.trend-name") if card else []) or \
+                    soup.select(".trend-card .trend-card__list li a.trend-name")
+            names = []
+            for a in items:
+                name = (a.get_text() or "").strip()
+                if not name:
+                    continue
+                name = re.sub(r"\s+", " ", name)
+                names.append(name)
+                if len(names) >= limit:
+                    break
+            return names
+    except Exception as e:
+        print(f"[WARN] Trends24 alınamadı: {e}", file=sys.stderr)
         return []
-    data = resp.json()
-    if not isinstance(data, list) or not data:
-        return []
-    trends = data[0].get("trends", []) or []
-    names = []
-    for t in trends:
-        name = t.get("name")
-        if isinstance(name, str) and name.strip():
-            # fazlalık boşlukları normalize et
-            name = re.sub(r"\s+", " ", name.strip())
-            names.append(name)
-            if len(names) >= limit:
-                break
-    return names
 
-def build_tweet_from_trends(trends: List[str]) -> str:
+def build_trend_tweet(trends: List[str]) -> str:
     if not trends:
         return f"Türkiye trendleri alınamadı — {istanbul_now_iso()}"
     header = "🐦 Türkiye Twitter Trendleri (Top 5)"
@@ -84,12 +82,8 @@ def post_tweet_oauth1(tweet_text: str):
     print(f"İçerik:\n{tweet_text}")
 
 def main():
-    # İstersen WOEID'i env ile geçebilirsin; boşsa Türkiye kullanır.
-    woeid = int(os.environ.get("TRENDS_WOEID", TR_WOEID_DEFAULT))
-    trends5 = get_twitter_trends_oauth1(woeid=woeid, limit=5)
-
-    # Sadece çekmek istersen buraya kadar yeter; aşağıda tweet atıyoruz.
-    tweet_text = build_tweet_from_trends(trends5)
+    trends5 = get_trends_from_trends24(limit=5)
+    tweet_text = build_trend_tweet(trends5)
     post_tweet_oauth1(tweet_text)
 
 if __name__ == "__main__":
