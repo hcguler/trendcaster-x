@@ -23,15 +23,56 @@ def istanbul_now_iso():
 # ---- GOOGLE TRENDS: Önce RSS, olmazsa pytrends fallback ----
 def get_google_trends_tr(limit: int = 5) -> List[str]:
     topics = []
-    # 1) pytrends
-    try:
-        pytrends = TrendReq(hl="tr-TR", tz=180)
-        df = pytrends.trending_searches(pn="turkey")
-        arr = [x for x in df[0].tolist() if isinstance(x, str)]
-        return arr[:limit]
-    except Exception as e:
-        print(f"[WARN] Google Trends (pytrends) alınamadı: {e}", file=sys.stderr)
+    
+    # Try different RSS URL formats
+    rss_urls = [
+        "https://trends.google.com/trends/trendingsearches/daily/rss?geo=TR",
+        "https://trends.google.com.tr/trends/trendingsearches/daily/rss?geo=TR",
+        "https://trends.google.com/trends/trendingsearches/realtime?geo=TR&category=all"
+    ]
+    
+    for rss_url in rss_urls:
+        try:
+            with httpx.Client(timeout=20) as client:
+                r = client.get(rss_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/rss+xml, application/xml"
+                })
+                if r.status_code == 200:
+                    feed = feedparser.parse(r.text)
+                    for e in feed.entries[:limit]:
+                        title = (e.title or "").strip()
+                        if title:
+                            topics.append(title)
+                    if topics:
+                        break
+        except Exception as e:
+            continue
+    
+    if topics:
+        return topics[:limit]
+    
+    # Fallback: pytrends with better error handling
+    if TrendReq is None:
+        print("[WARN] pytrends not installed", file=sys.stderr)
         return []
+    
+    try:
+        pytrends = TrendReq(hl="tr-TR", tz=180, timeout=(10, 30))
+        # Add retry logic
+        for attempt in range(3):
+            try:
+                df = pytrends.trending_searches(pn="turkey")
+                arr = [x for x in df[0].tolist() if isinstance(x, str)]
+                return arr[:limit]
+            except Exception:
+                if attempt < 2:
+                    time.sleep(2)  # Wait before retry
+                continue
+    except Exception as e:
+        print(f"[WARN] Google Trends (pytrends) failed: {e}", file=sys.stderr)
+        
+    return []
 
 # ---- TWITTER TRENDS: OAuth1 ile v1.1 trends/place ----
 def get_twitter_trends_tr_oauth1(
