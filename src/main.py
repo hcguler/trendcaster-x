@@ -152,8 +152,16 @@ def draw_progress_bar(draw: ImageDraw.ImageDraw,
         draw.rectangle(rect, fill=(filled_color if i < filled_segments else empty_color))
     draw.line([x + pad, y + pad, x + width - pad, y + pad], fill=edge, width=1)
 
+# -------------------- Başlık seçimi (tek kaynak) --------------------
+def select_title(now: datetime) -> str:
+    # Görseldekiyle tutarlı ve deterministik seçim
+    if not CATCHY_TITLES:
+        return "Zaman İlerlemesi"
+    idx = (now.timetuple().tm_yday * 24 + now.hour) % len(CATCHY_TITLES)
+    return CATCHY_TITLES[idx]
+
 # -------------------- Görsel oluşturma --------------------
-def make_image(now: datetime) -> bytes:
+def make_image(now: datetime, title: str) -> bytes:
     W, H = CANVAS_W, CANVAS_H
     img = Image.new("RGB", (W, H), color=(248,250,252))
     draw = ImageDraw.Draw(img)
@@ -175,9 +183,7 @@ def make_image(now: datetime) -> bytes:
     line_gap = 50
     bar_h = 46
 
-    # Başlık (deterministik seçim)
-    idx = (now.timetuple().tm_yday * 24 + now.hour) % len(CATCHY_TITLES)
-    title = CATCHY_TITLES[idx] if CATCHY_TITLES else "Zaman İlerlemesi"
+    # Başlık — DIŞARIDAN GELEN
     tw, th = text_wh(title, title_font)
     draw.text(((W - tw)//2, top_y), title, fill=(20,24,28), font=title_font)
 
@@ -244,10 +250,10 @@ def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
     print(f"İçerik:\n{text}")
 
 # -------------------- Metin (caption) --------------------
-def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
+def build_caption(now: datetime, yp: float, mp: float, dp: float, title: str) -> str:
     # Konumsuz, emojisiz, Türkçe ay adıyla
     lines = [
-        random.choice(CATCHY_TITLES),  # 20 başlıktan rastgele biri
+        title,  # Görseldekiyle aynı başlık
         f"• {now.year}: {percent_str(yp, 2)}",
         f"• {now.day} {tr_month_name(now.month)}: {percent_str(mp, 2)}",
         f"• {now.hour:02d}:{now.minute:02d} {tr_weekday_name(now.weekday())}: {percent_str(dp, 2)}",
@@ -259,9 +265,12 @@ def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
 # -------------------- main --------------------
 def main():
     now = now_tr()
+    # Tek bir başlık seç ve her yerde bunu kullan
+    title = select_title(now)
+
     yp, mp, dp = year_progress(now), month_progress(now), day_progress(now)
-    caption = build_caption(now, yp, mp, dp)
-    image_bytes = make_image(now)
+    caption = build_caption(now, yp, mp, dp, title)
+    image_bytes = make_image(now, title)
 
     oauth = oauth1_session_from_env()
     media_id = upload_media(oauth, image_bytes)
