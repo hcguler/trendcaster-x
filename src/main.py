@@ -193,7 +193,7 @@ def make_image(now: datetime) -> bytes:
     blocks = [
         (f"{now.year}", yp),
         (f"{now.day} {tr_month_name(now.month)}", mp),
-        ({tr_weekday_name(now.weekday())} {now.hour:02d}:{now.second:02d}, dp),
+        (f"{tr_weekday_name(now.weekday())} {now.hour:02d}:{now.minute:02d}", dp),
     ]
 
     for idx, (label, p) in enumerate(blocks):
@@ -249,9 +249,9 @@ def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
     lines = [
         random.choice(CATCHY_TITLES),  # 20 başlıktan rastgele biri
         f"• {now.year}: {percent_str(yp, 2)}",
-        f"• {tr_month_name(now.month)}: {percent_str(mp, 2)}",
-        f"• {tr_weekday_name(now.weekday())} {now.hour:02d}:{now.second:02d}: {percent_str(dp, 2)}",
-        f"Beni takip etmeyi unutma {OWNER_HANDLE}",  # footer
+        f"• {now.day} {tr_month_name(now.month)}: {percent_str(mp, 2)}",
+        f"• {tr_weekday_name(now.weekday())} {now.hour:02d}:{now.minute:02d}: {percent_str(dp, 2)}",
+        f"Beni takip etmeyi unutma {OWNER_HANDLE}",
     ]
     text = "\n".join(lines)
     return (text[:279] + "…") if len(text) > 280 else text
