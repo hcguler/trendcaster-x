@@ -69,8 +69,6 @@ def get_google_trends_tr(limit: int = 5) -> List[str]:
                 arr = [x for x in df[0].tolist() if isinstance(x, str)]
                 return arr[:limit]
             except Exception:
-                if attempt < 2:
-                    time.sleep(2)  # Wait before retry
                 continue
     except Exception as e:
         print(f"[WARN] Google Trends (pytrends) failed: {e}", file=sys.stderr)
