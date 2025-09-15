@@ -23,30 +23,10 @@ def istanbul_now_iso():
 # ---- GOOGLE TRENDS: Önce RSS, olmazsa pytrends fallback ----
 def get_google_trends_tr(limit: int = 5) -> List[str]:
     topics = []
-    # 1) RSS (daha stabil)
-    rss_url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=TR"
-    try:
-        with httpx.Client(timeout=20) as client:
-            r = client.get(rss_url, headers={"User-Agent": "Mozilla/5.0"})
-            r.raise_for_status()
-            feed = feedparser.parse(r.text)
-            for e in feed.entries[:limit]:
-                title = (e.title or "").strip()
-                if title:
-                    topics.append(title)
-    except Exception as e:
-        print(f"[WARN] Google Trends RSS okunamadı: {e}", file=sys.stderr)
-
-    if topics:
-        return topics[:limit]
-
-    # 2) Fallback: pytrends
-    if TrendReq is None:
-        print("[WARN] pytrends yok; Google Trends fallback atlandı.", file=sys.stderr)
-        return []
+    # 1) pytrends
     try:
         pytrends = TrendReq(hl="tr-TR", tz=180)
-        df = pytrends.trending_searches(pn="turkey")  # bazen 404 verebiliyor
+        df = pytrends.trending_searches(pn="turkey")
         arr = [x for x in df[0].tolist() if isinstance(x, str)]
         return arr[:limit]
     except Exception as e:
