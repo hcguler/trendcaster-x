@@ -1,0 +1,24 @@
+name: trend-tweets
+
+on:
+  schedule:
+    # GitHub Actions CRON UTC çalışır.
+    # İstanbul (+03:00) için 09:00, 12:00, 15:00 çalışsın istiyorsak:
+    # UTC'de 06:00, 09:00, 12:00 olur.
+    - cron: "0 6,9,12 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          DRY_RUN: ${{ secrets.DRY_RUN }}
+        run: python src/main.py
