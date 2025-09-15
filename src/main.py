@@ -1,4 +1,5 @@
 # main.py
+import random
 import os, sys, io
 from datetime import datetime, timezone, timedelta
 from typing import List, Tuple
@@ -246,7 +247,7 @@ def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
 def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
     # Konumsuz, emojisiz, Türkçe ay adıyla
     lines = [
-        {title},  # 20 başlıktan rastgele biri
+        random.choice(CATCHY_TITLES),  # 20 başlıktan rastgele biri
         f"• {now.year} (YIL): {percent_str(yp, 2)}",
         f"• {tr_month_name(now.month)} (AY): {percent_str(mp, 2)}",
         f"• {tr_weekday_name(now.weekday())} (GÜN): {percent_str(dp, 2)}",
