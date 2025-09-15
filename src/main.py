@@ -1,16 +1,17 @@
-import os, sys, io, math
+import os, sys, io
 from datetime import datetime, timezone, timedelta
 from typing import List, Tuple
 from requests_oauthlib import OAuth1Session
 
 from PIL import Image, ImageDraw, ImageFont
 
+# -------------------- Sabitler --------------------
 POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
 MEDIA_UPLOAD_ENDPOINT = "https://upload.twitter.com/1.1/media/upload.json"
 
-# ---- Zaman yardımcıları ------------------------------------------------------
-
+# -------------------- Zaman yardımcıları --------------------
 def istanbul_now():
+    # Saat dilimini sabit +03:00 alıyoruz (yaz/kış ayrımı gerekmiyor)
     tz_tr = timezone(timedelta(hours=3))
     return datetime.now(tz_tr)
 
@@ -21,7 +22,6 @@ def year_progress(dt: datetime) -> float:
 
 def month_progress(dt: datetime) -> float:
     start = datetime(dt.year, dt.month, 1, tzinfo=dt.tzinfo)
-    # sonraki ayın ilk günü
     if dt.month == 12:
         end = datetime(dt.year + 1, 1, 1, tzinfo=dt.tzinfo)
     else:
@@ -29,12 +29,31 @@ def month_progress(dt: datetime) -> float:
     return (dt - start).total_seconds() / (end - start).total_seconds()
 
 def day_progress(dt: datetime) -> float:
-    start = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo)  # 00:00
+    start = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo)
     end   = start + timedelta(days=1)
     return (dt - start).total_seconds() / (end - start).total_seconds()
 
-# ---- Ortam / OAuth -----------------------------------------------------------
+# -------------------- Yerelleştirme (TR) --------------------
+_TR_MONTHS = {
+    1:"Ocak", 2:"Şubat", 3:"Mart", 4:"Nisan", 5:"Mayıs", 6:"Haziran",
+    7:"Temmuz", 8:"Ağustos", 9:"Eylül", 10:"Ekim", 11:"Kasım", 12:"Aralık"
+}
+_TR_WEEKDAYS = {  # Monday=0
+    0:"Pazartesi", 1:"Salı", 2:"Çarşamba", 3:"Perşembe",
+    4:"Cuma", 5:"Cumartesi", 6:"Pazar"
+}
 
+def tr_month_name(month_index: int) -> str:
+    return _TR_MONTHS.get(month_index, str(month_index))
+
+def tr_weekday_name(weekday_index: int) -> str:
+    return _TR_WEEKDAYS.get(weekday_index, "")
+
+def format_tr_datetime_line(dt: datetime) -> str:
+    # İstenen format: dd.MM.yyyy HH:ss (dayname)  -> dakika yerine saniye istenmiş
+    return f"{dt.day:02d}.{dt.month:02d}.{dt.year:04d} {dt.hour:02d}:{dt.second:02d} ({tr_weekday_name(dt.weekday())})"
+
+# -------------------- Env / OAuth --------------------
 def require_env(keys: List[str]) -> dict:
     envs = {k: os.environ.get(k) for k in keys}
     missing = [k for k, v in envs.items() if not v]
@@ -57,18 +76,13 @@ def oauth1_session_from_env() -> OAuth1Session:
         resource_owner_secret=envs["TWITTER_ACCESS_TOKEN_SECRET"],
     )
 
-# ---- Görsel üretimi ----------------------------------------------------------
-
-def load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """
-    Sistemde varsa DejaVuSans.ttf kullanır; yoksa PIL'in default bitmap fontuna düşer.
-    """
-    # En yaygın açık fontlardan bazılarını sırayla dene:
+# -------------------- Görsel yardımcıları --------------------
+def load_font(size: int):
     candidates = [
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
         "/Library/Fonts/Arial Unicode.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
     ]
     for path in candidates:
         if os.path.exists(path):
@@ -78,70 +92,51 @@ def load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
                 pass
     return ImageFont.load_default()
 
+def percent_str(p: float, digits: int = 2) -> str:
+    v = max(0.0, min(1.0, p)) * 100.0
+    return f"{v:.{digits}f}%"
+
 def draw_progress_bar(draw: ImageDraw.ImageDraw,
                       x: int, y: int, width: int, height: int,
                       progress: float,
                       segments: int = 100,
-                      pad: int = 2,
-                      radius: int = 8):
-    """
-    Segmented (100 dilimlik) bir progress bar çizer.
-    - progress: 0.0–1.0
-    """
-    # Arka plan çerçevesi (rounded rectangle görünümü)
-    # PIL'in rounded rectangle API'sı eski sürümlerde sınırlı olabilir, basitçe köşeleri oval gibi resmedelim:
-    draw.rounded_rectangle([x, y, x + width, y + height], radius=radius, fill=None, outline=(220, 220, 220), width=2)
-
-    # Segment hesapları
-    total_inner_w = width - 2 * pad
-    seg_gap = 2  # segmentler arası boşluk
+                      pad: int = 6,
+                      radius: int = 12):
+    draw.rounded_rectangle([x, y, x + width, y + height], radius=radius, fill=None, outline=(220,220,220), width=2)
+    total_inner_w = width - 2*pad
+    seg_gap = 2
     seg_w = (total_inner_w - (segments - 1) * seg_gap) / segments
-    seg_h = height - 2 * pad
-    filled_segments = int(round(progress * segments))
+    seg_h = height - 2*pad
+    filled_segments = int(round(max(0.0, min(1.0, progress)) * segments))
 
-    # Renkler (açık tasarım; koyu mod için renkleri güncelleyebilirsiniz)
-    filled_color = (40, 160, 240)     # mavi ton
-    empty_color  = (235, 240, 245)    # açık gri/mavi
-    edge = (255, 255, 255)
+    filled_color = (40,160,240)
+    empty_color  = (235,240,245)
+    edge = (255,255,255)
 
-    # Segmentleri çiz
     for i in range(segments):
         seg_x = x + pad + i * (seg_w + seg_gap)
         seg_y = y + pad
         rect = [seg_x, seg_y, seg_x + seg_w, seg_y + seg_h]
-        if i < filled_segments:
-            draw.rectangle(rect, fill=filled_color, outline=None)
-        else:
-            draw.rectangle(rect, fill=empty_color, outline=None)
+        draw.rectangle(rect, fill=(filled_color if i < filled_segments else empty_color))
 
-    # Parlaklık efekti (üst kısma hafif bir çizgi)
     draw.line([x + pad, y + pad, x + width - pad, y + pad], fill=edge, width=1)
 
-def percent_str(p: float, digits: int = 1) -> str:
-    return f"{max(0.0, min(100.0, p * 100.0)):.{digits}f}%"
-
+# -------------------- Görsel oluşturma --------------------
 def make_image(now: datetime) -> bytes:
-    """
-    1080x1350 dikey görsel oluşturur (Instagram/X için uygun).
-    Üstte başlık ve tarih; altta Yıl / Ay / Gün için 100 dilimlik progress bar'lar.
-    Pillow 10+ uyumlu (textsize yerine textbbox kullanır).
-    """
     W, H = 1080, 1350
-    img = Image.new("RGB", (W, H), color=(248, 250, 252))
+    img = Image.new("RGB", (W, H), color=(248,250,252))
     draw = ImageDraw.Draw(img)
 
-    # Küçük yardımcı: metin boyutunu textbbox ile hesapla
-    def text_wh(txt: str, font: ImageFont.ImageFont) -> tuple[int, int]:
-        # bbox: (left, top, right, bottom)
-        l, t, r, b = draw.textbbox((0, 0), txt, font=font)
-        return (r - l, b - t)
+    def text_wh(txt: str, font: ImageFont.ImageFont) -> Tuple[int,int]:
+        l, t, r, b = draw.textbbox((0,0), txt, font=font)
+        return (r-l, b-t)
 
     # Yazı tipleri
-    title_font   = load_font(72)
-    date_font    = load_font(42)
-    label_font   = load_font(44)
-    value_font   = load_font(44)
-    foot_font    = load_font(28)
+    title_font = load_font(72)
+    date_font  = load_font(42)
+    label_font = load_font(44)
+    value_font = load_font(44)
+    foot_font  = load_font(28)
 
     # Kenar boşlukları
     margin_x = 80
@@ -149,69 +144,56 @@ def make_image(now: datetime) -> bytes:
     line_gap = 60
     bar_h = 48
 
-    # Başlık
-    title = "Zaman İlerlemesi — İstanbul"
+    # Başlık — küçük bir havuzdan "çek": günü+saati mod alıp sabit deterministik seçim yapıyoruz
+    catchy_titles = [
+        "Zaman Akıyor ⏳",
+        "Takvim Hızı 🏃‍♀️💨",
+        "Bugünün Kaydı 📊",
+        "Zaman İlerlemesi",
+    ]
+    title = catchy_titles[(now.timetuple().tm_yday + now.hour) % len(catchy_titles)]
     tw, th = text_wh(title, title_font)
-    draw.text(((W - tw) / 2, top_y), title, fill=(20, 24, 28), font=title_font)
+    draw.text(((W - tw)//2, top_y), title, fill=(20,24,28), font=title_font)
 
-    # Tarih-saat
-    date_str = now.strftime("%Y-%m-%d %H:%M:%S %Z")
-    dw, dh = text_wh(date_str, date_font)
-    draw.text(((W - dw) / 2, top_y + th + 20), date_str, fill=(80, 90, 100), font=date_font)
+    # Türkçe tarih satırı: dd.MM.yyyy HH:ss (günadı)
+    date_line = format_tr_datetime_line(now)
+    dw, dh = text_wh(date_line, date_font)
+    draw.text(((W - dw)//2, top_y + th + 20), date_line, fill=(80,90,100), font=date_font)
 
-    # Progress hesapları
-    yp = year_progress(now)
-    mp = month_progress(now)
-    dp = day_progress(now)
+    # İlerlemeler
+    yp, mp, dp = year_progress(now), month_progress(now), day_progress(now)
 
-    # Bölüm başlıkları ve barlar
     section_y = top_y + th + 20 + dh + 100
-
-    blocks: list[tuple[str, float]] = [
+    blocks = [
         (f"Yıl {now.year}", yp),
-        (now.strftime("Ay %B"), mp),
+        (f"Ay {tr_month_name(now.month)}", mp),  # Türkçe ay adı
         ("Gün", dp),
     ]
 
     for idx, (label, p) in enumerate(blocks):
         y = section_y + idx * (bar_h + 2 * line_gap + 30)
-
-        # Etiket
         lw, lh = text_wh(label, label_font)
-        draw.text((margin_x, y), label, fill=(30, 34, 40), font=label_font)
+        draw.text((margin_x, y), label, fill=(30,34,40), font=label_font)
 
-        # Yüzde değeri (sağa hizalı)
         val = percent_str(p, digits=2)
         vw, vh = text_wh(val, value_font)
-        draw.text((W - margin_x - vw, y), val, fill=(30, 34, 40), font=value_font)
+        draw.text((W - margin_x - vw, y), val, fill=(30,34,40), font=value_font)
 
-        # Bar
         bar_y = y + lh + 20
-        draw_progress_bar(
-            draw,
-            x=margin_x,
-            y=bar_y,
-            width=W - 2 * margin_x,
-            height=bar_h,
-            progress=p,
-            segments=100,
-            pad=6,
-            radius=12
-        )
+        draw_progress_bar(draw, x=margin_x, y=bar_y,
+                          width=W - 2*margin_x, height=bar_h,
+                          progress=p, segments=100, pad=6, radius=12)
 
-    # Alt bilgi
-    footer = "Yıl/Ay/Gün ilerlemeleri 100 dilimlik çubuklarla görselleştirilmiştir."
+    # Eğlenceli footer
+    footer = "Ben bir robotum; zamanla aramız şahane. Hoşuna gittiyse takip et! 🤖✨"
     fw, fh = text_wh(footer, foot_font)
-    draw.text(((W - fw) / 2, H - fh - 60), footer, fill=(90, 100, 110), font=foot_font)
+    draw.text(((W - fw)//2, H - fh - 60), footer, fill=(90,100,110), font=foot_font)
 
-    # PNG baytları
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
     return buf.getvalue()
 
-
-# ---- X (Twitter) API: medya yükleme + tweet ----------------------------------
-
+# -------------------- Medya yükleme & Tweet --------------------
 def upload_media(oauth: OAuth1Session, image_bytes: bytes) -> str:
     files = {"media": ("progress.png", image_bytes, "image/png")}
     resp = oauth.post(MEDIA_UPLOAD_ENDPOINT, files=files)
@@ -235,22 +217,19 @@ def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
     print(f"Başarılı ✅ Tweet ID: {tweet_id}")
     print(f"İçerik:\n{text}")
 
-# ---- Metin oluşturma ---------------------------------------------------------
-
+# -------------------- Metin (caption) --------------------
 def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
     lines = [
-        "🗓️ Türkiye/İstanbul Zaman İlerlemesi",
+        "⏳ Zaman İlerlemesi",
         f"• Yıl {now.year}: {percent_str(yp, 2)}",
-        f"• {now.strftime('Ay %B')}: {percent_str(mp, 2)}",
+        f"• Ay {tr_month_name(now.month)}: {percent_str(mp, 2)}",
         f"• Gün: {percent_str(dp, 2)}",
-        now.strftime("⏱️ %Y-%m-%d %H:%M:%S %Z"),
+        "🤖 Robotum ama iyi arkadaş olurum; takip et, sayılarda buluşalım!",
     ]
     text = "\n".join(lines)
-    # 280 sınırına güvenli kırpma (görsel zaten bilgiyi taşıyor)
     return (text[:279] + "…") if len(text) > 280 else text
 
-# ---- main --------------------------------------------------------------------
-
+# -------------------- main --------------------
 def main():
     now = istanbul_now()
     yp, mp, dp = year_progress(now), month_progress(now), day_progress(now)
