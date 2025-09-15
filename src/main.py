@@ -251,7 +251,7 @@ def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
         f"• {now.year}: {percent_str(yp, 2)}",
         f"• {now.day} {tr_month_name(now.month)}: {percent_str(mp, 2)}",
         f"• {now.hour:02d}:{now.minute:02d} {tr_weekday_name(now.weekday())}: {percent_str(dp, 2)}",
-        f"Beni takip etmeyi unutma {OWNER_HANDLE}",
+        f"Beni takip etmeyi unutma {OWNER_HANDLE}, #TrendingNow, #Gündem, #TrendTweets",
     ]
     text = "\n".join(lines)
     return (text[:279] + "…") if len(text) > 280 else text
