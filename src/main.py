@@ -1,17 +1,47 @@
+# main.py
 import os, sys, io
 from datetime import datetime, timezone, timedelta
 from typing import List, Tuple
 from requests_oauthlib import OAuth1Session
-
 from PIL import Image, ImageDraw, ImageFont
 
 # -------------------- Sabitler --------------------
 POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
 MEDIA_UPLOAD_ENDPOINT = "https://upload.twitter.com/1.1/media/upload.json"
 
+# Görsel boyutu (kare)
+CANVAS_W = 1080
+CANVAS_H = 1080
+
+# Footer'da görünsün diye kullanıcı adı
+OWNER_HANDLE = "@durbirbakiyim"
+
+# Başlık havuzu (2–3 kelime, emojisiz)
+CATCHY_TITLES = [
+    "Zaman Akışı",
+    "Takvim Hızı",
+    "Bugün Kaydı",
+    "Günlük Tempo",
+    "Zaman Nabzı",
+    "Kronometre Hal",
+    "Anın Özeti",
+    "Zaman Çizgisi",
+    "Günlük İlerleme",
+    "Takvim Nabzı",
+    "Zaman Ölçümü",
+    "Günün Durumu",
+    "Zaman Özeti",
+    "Bugün İlerleme",
+    "Takvim Özeti",
+    "Günlük Rapor",
+    "Zaman Grafiği",
+    "Anlık İlerleme",
+    "Zaman Panosu",
+    "Takvim Panosu",
+]
+
 # -------------------- Zaman yardımcıları --------------------
-def istanbul_now():
-    # Saat dilimini sabit +03:00 alıyoruz (yaz/kış ayrımı gerekmiyor)
+def now_tr():
     tz_tr = timezone(timedelta(hours=3))
     return datetime.now(tz_tr)
 
@@ -43,14 +73,14 @@ _TR_WEEKDAYS = {  # Monday=0
     4:"Cuma", 5:"Cumartesi", 6:"Pazar"
 }
 
-def tr_month_name(month_index: int) -> str:
-    return _TR_MONTHS.get(month_index, str(month_index))
+def tr_month_name(m: int) -> str:
+    return _TR_MONTHS.get(m, str(m))
 
-def tr_weekday_name(weekday_index: int) -> str:
-    return _TR_WEEKDAYS.get(weekday_index, "")
+def tr_weekday_name(wd: int) -> str:
+    return _TR_WEEKDAYS.get(wd, "")
 
 def format_tr_datetime_line(dt: datetime) -> str:
-    # İstenen format: dd.MM.yyyy HH:ss (dayname)  -> dakika yerine saniye istenmiş
+    # dd.MM.yyyy HH:ss (günadı) — dakika yerine saniye istendi
     return f"{dt.day:02d}.{dt.month:02d}.{dt.year:04d} {dt.hour:02d}:{dt.second:02d} ({tr_weekday_name(dt.weekday())})"
 
 # -------------------- Env / OAuth --------------------
@@ -102,7 +132,8 @@ def draw_progress_bar(draw: ImageDraw.ImageDraw,
                       segments: int = 100,
                       pad: int = 6,
                       radius: int = 12):
-    draw.rounded_rectangle([x, y, x + width, y + height], radius=radius, fill=None, outline=(220,220,220), width=2)
+    draw.rounded_rectangle([x, y, x + width, y + height], radius=radius,
+                           fill=None, outline=(220,220,220), width=2)
     total_inner_w = width - 2*pad
     seg_gap = 2
     seg_w = (total_inner_w - (segments - 1) * seg_gap) / segments
@@ -118,12 +149,11 @@ def draw_progress_bar(draw: ImageDraw.ImageDraw,
         seg_y = y + pad
         rect = [seg_x, seg_y, seg_x + seg_w, seg_y + seg_h]
         draw.rectangle(rect, fill=(filled_color if i < filled_segments else empty_color))
-
     draw.line([x + pad, y + pad, x + width - pad, y + pad], fill=edge, width=1)
 
 # -------------------- Görsel oluşturma --------------------
 def make_image(now: datetime) -> bytes:
-    W, H = 1080, 1350
+    W, H = CANVAS_W, CANVAS_H
     img = Image.new("RGB", (W, H), color=(248,250,252))
     draw = ImageDraw.Draw(img)
 
@@ -133,45 +163,40 @@ def make_image(now: datetime) -> bytes:
 
     # Yazı tipleri
     title_font = load_font(72)
-    date_font  = load_font(42)
+    date_font  = load_font(40)
     label_font = load_font(44)
     value_font = load_font(44)
     foot_font  = load_font(28)
 
-    # Kenar boşlukları
+    # Kenar boşlukları ve ölçüler (kare tuvale göre ayarlandı)
     margin_x = 80
-    top_y = 120
-    line_gap = 60
-    bar_h = 48
+    top_y = 90
+    line_gap = 50
+    bar_h = 46
 
-    # Başlık — küçük bir havuzdan "çek": günü+saati mod alıp sabit deterministik seçim yapıyoruz
-    catchy_titles = [
-        "Zaman Akıyor ⏳",
-        "Takvim Hızı 🏃‍♀️💨",
-        "Bugünün Kaydı 📊",
-        "Zaman İlerlemesi",
-    ]
-    title = catchy_titles[(now.timetuple().tm_yday + now.hour) % len(catchy_titles)]
+    # Başlık (deterministik seçim)
+    idx = (now.timetuple().tm_yday * 24 + now.hour) % len(CATCHY_TITLES)
+    title = CATCHY_TITLES[idx] if CATCHY_TITLES else "Zaman İlerlemesi"
     tw, th = text_wh(title, title_font)
     draw.text(((W - tw)//2, top_y), title, fill=(20,24,28), font=title_font)
 
-    # Türkçe tarih satırı: dd.MM.yyyy HH:ss (günadı)
+    # Türkçe tarih satırı
     date_line = format_tr_datetime_line(now)
     dw, dh = text_wh(date_line, date_font)
-    draw.text(((W - dw)//2, top_y + th + 20), date_line, fill=(80,90,100), font=date_font)
+    draw.text(((W - dw)//2, top_y + th + 16), date_line, fill=(80,90,100), font=date_font)
 
     # İlerlemeler
     yp, mp, dp = year_progress(now), month_progress(now), day_progress(now)
 
-    section_y = top_y + th + 20 + dh + 100
+    section_y = top_y + th + 16 + dh + 70
     blocks = [
         (f"Yıl {now.year}", yp),
-        (f"Ay {tr_month_name(now.month)}", mp),  # Türkçe ay adı
+        (f"Ay {tr_month_name(now.month)}", mp),
         ("Gün", dp),
     ]
 
     for idx, (label, p) in enumerate(blocks):
-        y = section_y + idx * (bar_h + 2 * line_gap + 30)
+        y = section_y + idx * (bar_h + 2 * line_gap + 24)
         lw, lh = text_wh(label, label_font)
         draw.text((margin_x, y), label, fill=(30,34,40), font=label_font)
 
@@ -179,15 +204,15 @@ def make_image(now: datetime) -> bytes:
         vw, vh = text_wh(val, value_font)
         draw.text((W - margin_x - vw, y), val, fill=(30,34,40), font=value_font)
 
-        bar_y = y + lh + 20
+        bar_y = y + lh + 18
         draw_progress_bar(draw, x=margin_x, y=bar_y,
                           width=W - 2*margin_x, height=bar_h,
                           progress=p, segments=100, pad=6, radius=12)
 
-    # Eğlenceli footer
-    footer = "Ben bir robotum; zamanla aramız şahane. Hoşuna gittiyse takip et! 🤖✨"
+    # Footer — sahiplik ve nazik çağrı
+    footer = f"© {OWNER_HANDLE} — paylaşırsan beni etiketle; ben de uğrarım."
     fw, fh = text_wh(footer, foot_font)
-    draw.text(((W - fw)//2, H - fh - 60), footer, fill=(90,100,110), font=foot_font)
+    draw.text(((W - fw)//2, H - fh - 40), footer, fill=(90,100,110), font=foot_font)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
@@ -219,19 +244,20 @@ def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
 
 # -------------------- Metin (caption) --------------------
 def build_caption(now: datetime, yp: float, mp: float, dp: float) -> str:
+    # Konumsuz, emojisiz, Türkçe ay adıyla
     lines = [
-        "⏳ Zaman İlerlemesi",
-        f"• Yıl {now.year}: {percent_str(yp, 2)}",
-        f"• Ay {tr_month_name(now.month)}: {percent_str(mp, 2)}",
-        f"• Gün: {percent_str(dp, 2)}",
-        "🤖 Robotum ama iyi arkadaş olurum; takip et, sayılarda buluşalım!",
+        random.choice(CATCHY_TITLES),  # 20 başlıktan rastgele biri
+        f"• {now.year} (YIL): {percent_str(yp, 2)}",
+        f"• {tr_month_name(now.month)} (AY): {percent_str(mp, 2)}",
+        f"• {tr_weekday_name(now.weekday())} (GÜN): {percent_str(dp, 2)}",
+        f"Beni takip etmeyi unutma {OWNER_HANDLE}",  # footer
     ]
     text = "\n".join(lines)
     return (text[:279] + "…") if len(text) > 280 else text
 
 # -------------------- main --------------------
 def main():
-    now = istanbul_now()
+    now = now_tr()
     yp, mp, dp = year_progress(now), month_progress(now), day_progress(now)
     caption = build_caption(now, yp, mp, dp)
     image_bytes = make_image(now)
