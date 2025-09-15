@@ -1,10 +1,13 @@
 import os
 import sys
+import time
 from datetime import datetime, timezone, timedelta
 from typing import List
 from requests_oauthlib import OAuth1Session
 import httpx
 import feedparser
+
+
 
 # pytrends yedek amaçlı; yoksa hatayı yumuşat
 try:
