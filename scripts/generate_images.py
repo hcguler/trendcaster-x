@@ -1,8 +1,10 @@
 # scripts/generate_images.py
-import os
+import sys, os
 import shutil
 from datetime import datetime
-from src.common import tz_tr, today_slots, select_title, make_image
+from common import tz_tr, today_slots, select_title, make_image
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 OUT_DIR = "out/daily"
 
