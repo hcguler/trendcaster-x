@@ -4,7 +4,9 @@ import sys
 from datetime import datetime
 from requests_oauthlib import OAuth1Session
 
-from src.common import tz_tr, slot_floor, select_title, build_caption, make_image
+from common import tz_tr, slot_floor, select_title, build_caption, make_image
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
 MEDIA_UPLOAD_ENDPOINT = "https://upload.twitter.com/1.1/media/upload.json"
