@@ -1,4 +1,3 @@
-# src/common.py
 import io
 import os
 from datetime import datetime, timezone, timedelta
@@ -59,7 +58,7 @@ def tr_weekday_name(wd: int) -> str:
     return _TR_WEEKDAYS.get(wd, "")
 
 def format_tr_datetime_line(dt: datetime) -> str:
-    # dd.MM.yyyy (Günadı) HH:mm — (dakika kullanıyoruz; saniye yok)
+    # dd.MM.yyyy (Günadı) HH:mm
     return f"{dt.day:02d}.{dt.month:02d}.{dt.year:04d} ({tr_weekday_name(dt.weekday())}) {dt.hour:02d}:{dt.minute:02d}"
 
 # -------------------- Görsel yardımcıları --------------------
