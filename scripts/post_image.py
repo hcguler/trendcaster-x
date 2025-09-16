@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 from requests_oauthlib import OAuth1Session
 
-from common import tz_tr, slot_floor, select_title, build_caption, make_image
+from src.common import tz_tr, slot_floor, select_title, build_caption, make_image
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
