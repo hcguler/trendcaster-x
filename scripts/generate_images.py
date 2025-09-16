@@ -1,7 +1,7 @@
-# scripts/generate_images.py
-import sys, os
-import shutil
 from datetime import datetime
+import os
+import shutil
+
 from src.common import tz_tr, today_slots, select_title, make_image
 
 OUT_DIR = "out/daily"
