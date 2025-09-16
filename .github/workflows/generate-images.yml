@@ -1,0 +1,36 @@
+# .github/workflows/generate-images.yml
+name: generate-images
+
+on:
+  schedule:
+    - cron: "0 21 * * *"  # Her gün 00:00 TRT = 21:00 UTC (Türkiye UTC+3)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Generate today's 6 images (00,04,08,12,16,20 TRT)
+        run: python scripts/generate_images.py
+      - name: Commit & push images
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(images): regenerate daily set [skip ci]" || echo "No changes"
+          git pull --rebase
+          git push
