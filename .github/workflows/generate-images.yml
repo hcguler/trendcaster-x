@@ -24,6 +24,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
+      - name: Add repo to PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
       - name: Generate today's 6 images (00,04,08,12,16,20 TRT)
         run: python scripts/generate_images.py
       - name: Commit & push images
