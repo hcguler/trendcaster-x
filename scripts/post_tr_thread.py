@@ -13,17 +13,12 @@ from requests_oauthlib import OAuth1Session
 from openai import OpenAI
 from openai import RateLimitError, APIError, APIConnectionError, APITimeoutError
 
-# -------------------------------------------------------------------
-# Sabitler (minimum env ile çalışır)
-# -------------------------------------------------------------------
-POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"  # v2 tweet
+POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
 TR_TZ = timezone(timedelta(hours=3))
 MAX_RETRIES = 3
 BASE_DELAY = 5.0  # sn
 
-# -------------------------------------------------------------------
-# Yardımcılar
-# -------------------------------------------------------------------
+# ---------------------------- helpers ----------------------------
 def require_env(keys: List[str]) -> Dict[str, str]:
     envs = {k: os.environ.get(k) for k in keys}
     missing = [k for k, v in envs.items() if not v]
@@ -47,7 +42,9 @@ def oauth1_session_from_env() -> OAuth1Session:
     )
 
 def get_openai_client() -> OpenAI:
-    require_env(["OPENAI_API_KEY"])
+    # OPENAI_API_KEY yoksa burada exception fırlasın; aşağıda fallback’e düşeceğiz
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise RuntimeError("OPENAI_API_KEY missing")
     return OpenAI()
 
 def build_prompt(now_tr: datetime) -> List[Dict[str, Any]]:
@@ -81,7 +78,40 @@ Kurallar:
         {"role": "user", "content": user_msg},
     ]
 
-def call_openai_with_retry(client: OpenAI, messages: List[Dict[str, Any]], model: str) -> Dict[str, Any]:
+# ---------------------------- fallback ----------------------------
+def fallback_topics() -> List[str]:
+    return [
+        "Ekonomi ve piyasalar",
+        "Eğitim ve sınav gündemi",
+        "Sağlık ve toplum",
+        "Spor ve transfer gelişmeleri",
+        "Teknoloji ve dijital güvenlik",
+        "Kültür-sanat ve etkinlikler",
+        "Ulaşım ve şehir yaşamı",
+        "Hava durumu ve afet farkındalığı",
+        "İş dünyası ve girişimler",
+        "Gündelik yaşam pratikleri",
+    ]
+
+def fallback_tweets() -> List[str]:
+    return [
+        "Günün öne çıkan başlıkları ekonomi, eğitim, sağlık ve teknoloji etrafında yoğunlaşıyor. Doğrulanmış ve resmi kaynakları izlemek bilgi kirliliğinden kaçınmada kritik.",
+        "Piyasalarda dalgalanma sürerken uzun vadeli bakış ve risk yönetimi öne çıkıyor. Eğitim tarafında sınav ve başvuru takvimlerini resmi duyurulardan teyit etmek önemli.",
+        "Sağlıkta mevsimsel konular ve toplum sağlığı önerileri dikkat çekiyor. Teknolojide yapay zekâ ve siber güvenlik haberleri gündemde.",
+        "Spor, kültür-sanat ve şehir yaşamında etkinlikler hareketli. Güncel gelişmeler için güvenilir kanalları takip etmek en sağlıklı yaklaşım.",
+    ]
+
+# ---------------------------- OpenAI call with built-in fallback ----------------------------
+def call_openai_or_fallback(now_tr: datetime) -> Dict[str, Any]:
+    messages = build_prompt(now_tr)
+    model = os.environ.get("MODEL", "gpt-4o-mini")
+
+    try:
+        client = get_openai_client()
+    except Exception as e:
+        print(f"[WARN] OpenAI client oluşturulamadı ({e}) -> FALLBACK kullanılacak.")
+        return {"topics": fallback_topics(), "tweets": fallback_tweets(), "fallback": True}
+
     last_err = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -92,29 +122,27 @@ def call_openai_with_retry(client: OpenAI, messages: List[Dict[str, Any]], model
                 response_format={"type": "json_object"},
                 timeout=60,
             )
-            return json.loads(resp.choices[0].message.content)
-        except (RateLimitError, APIError, APIConnectionError, APITimeoutError, Exception) as e:
+            data = json.loads(resp.choices[0].message.content)
+            return {"topics": data.get("topics", []), "tweets": data.get("tweets", []), "fallback": False}
+        except RateLimitError as e:
             last_err = e
-            print(f"[WARN] OpenAI hata (attempt {attempt}/{MAX_RETRIES}): {e}", file=sys.stderr)
-            if attempt < MAX_RETRIES:
-                time.sleep(BASE_DELAY * (2 ** (attempt - 1)))
-    raise last_err
+            # Kota özel: hiç bekletmeden güvenli fallback’e geç
+            err_txt = getattr(e, "message", str(e))
+            if "insufficient_quota" in str(e).lower() or "quota" in str(e).lower():
+                print(f"[INFO] OpenAI insufficient_quota -> FALLBACK kullanılacak. ({err_txt})")
+                return {"topics": fallback_topics(), "tweets": fallback_tweets(), "fallback": True}
+            print(f"[WARN] OpenAI RateLimitError (attempt {attempt}/{MAX_RETRIES}): {e}")
+        except (APIConnectionError, APITimeoutError, APIError, Exception) as e:
+            last_err = e
+            print(f"[WARN] OpenAI hata (attempt {attempt}/{MAX_RETRIES}): {e}")
+        # exponential backoff
+        time.sleep(BASE_DELAY * (2 ** (attempt - 1)))
 
-def fetch_topics_and_tweets(now_tr: datetime) -> Dict[str, Any]:
-    client = get_openai_client()
-    model = os.environ.get("MODEL", "gpt-4o-mini")
-    data = call_openai_with_retry(client, build_prompt(now_tr), model)
+    # sürekli hata—güvenli fallback
+    print(f"[INFO] OpenAI erişimi başarısız -> FALLBACK kullanılacak. Son hata: {last_err}")
+    return {"topics": fallback_topics(), "tweets": fallback_tweets(), "fallback": True}
 
-    topics = [str(t)[:120] for t in data.get("topics", [])][:10]
-    tweets = [str(t).strip()[:270] for t in data.get("tweets", [])][:5]
-    if len(tweets) < 4:
-        # 4'ün altı kalırsa başlıklardan kısa özetlerle tamamla
-        for t in topics:
-            if len(tweets) >= 4:
-                break
-            tweets.append(f"Özet: {t[:230]}")
-    return {"topics": topics, "tweets": tweets}
-
+# ---------------------------- Twitter ----------------------------
 def post_tweet(oauth: OAuth1Session, text: str, reply_to_id: str | None = None) -> str:
     payload = {"text": text}
     if reply_to_id:
@@ -125,24 +153,27 @@ def post_tweet(oauth: OAuth1Session, text: str, reply_to_id: str | None = None) 
         sys.exit(2)
     return (resp.json() or {}).get("data", {}).get("id")
 
-# -------------------------------------------------------------------
-# main
-# -------------------------------------------------------------------
+# ---------------------------- main ----------------------------
 def main():
     now_tr = datetime.now(tz=TR_TZ)
-    bundle = fetch_topics_and_tweets(now_tr)
 
-    topics = bundle["topics"]
-    tweets = bundle["tweets"]
+    data = call_openai_or_fallback(now_tr)
+    topics = [str(t)[:120] for t in data["topics"]][:10]
+    tweets = [str(t).strip()[:270] for t in data["tweets"]][:5]
 
-    # Giriş + 4 tweet = toplam 5 tut
+    # En az 4 tweet garantisi
+    if len(tweets) < 4:
+        for t in topics:
+            if len(tweets) >= 4:
+                break
+            tweets.append(f"Özet: {t[:230]}")
+
     intro = f"Türkiye gündemi ({now_tr.strftime('%d %B %Y')}):"
     thread = [intro] + tweets
     thread = thread[:5]
 
     oauth = oauth1_session_from_env()
 
-    # Thread postla
     first_id = None
     for i, text in enumerate(thread):
         tid = post_tweet(oauth, text, reply_to_id=first_id if i > 0 else None)
@@ -150,8 +181,11 @@ def main():
             first_id = tid
         time.sleep(2)
 
+    if data.get("fallback"):
+        print("UYARI: OpenAI kullanılamadı, nötr FALLBACK thread postlandı.")
     print("Başarılı ✅ İlk tweet ID:", first_id)
-    print("Konu başlıkları:", "; ".join(topics))
+    if topics:
+        print("Konu başlıkları:", "; ".join(topics))
 
 if __name__ == "__main__":
     main()
