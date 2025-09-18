@@ -1,0 +1,38 @@
+name: tr-trendcaster
+
+on:
+  schedule:
+    # Türkiye her zaman UTC+3 olduğu için 20:00 TR == 17:00 UTC
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Istanbul
+      MODEL: ${{ vars.MODEL || 'gpt-4o-mini' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      POST_TO_TWITTER: ${{ vars.POST_TO_TWITTER || 'false' }}
+      TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+      TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+      TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+      TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+      # İsteğe bağlı:
+      OWNER_HANDLE: ${{ vars.OWNER_HANDLE || '' }}
+      # X_BEARER_TOKEN burada gerekmiyor; OAuth1 ile v1.1 endpoint kullanıyoruz.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install -r bot_requirements.txt
+
+      - name: Run poster
+        run: |
+          python scripts/post_tr_tweets.py
