@@ -2,7 +2,7 @@ name: Daily Turkey News Thread
 
 on:
   schedule:
-    # Her gün Türkiye saati 17:00 (UTC 14:00)
+    # Her gün Türkiye saati 17:00 (UTC 14:00) 
     - cron: '0 14 * * *'
   workflow_dispatch:  # Manuel tetikleme için
 
