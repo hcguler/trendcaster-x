@@ -8,15 +8,24 @@ from typing import List, Dict, Any
 import requests
 from requests_oauthlib import OAuth1
 from openai import OpenAI
+# OpenAI v1 exceptions
+from openai import APIError, RateLimitError, APIConnectionError, APITimeoutError
 
 # -------------------- Config --------------------
 TW_POST_ENDPOINT = "https://api.twitter.com/1.1/statuses/update.json"
 
-OWNER_HANDLE = os.getenv("OWNER_HANDLE", "")  # İstersen sabit bir hesap çağrısı eklemek için kullan
+OWNER_HANDLE = os.getenv("OWNER_HANDLE", "")  # İsteğe bağlı footer/cta için
 MODEL = os.getenv("MODEL", "gpt-4o-mini")
 POST_TO_TWITTER = (os.getenv("POST_TO_TWITTER", "false").lower() == "true")
 
-# Türkiye sabiti (Türkiye sabit UTC+3)
+# Kota biterse ne yapalım? 'skip' | 'template' | 'fail'
+ON_QUOTA_EXCEEDED = os.getenv("ON_QUOTA_EXCEEDED", "skip").lower()
+
+# Retry ayarları
+MAX_RETRIES = int(os.getenv("OAI_MAX_RETRIES", "4"))
+BASE_DELAY = float(os.getenv("OAI_BASE_DELAY", "6.0"))  # saniye
+
+# Türkiye UTC+3
 TR_TZ = timezone(timedelta(hours=3))
 
 
@@ -28,17 +37,11 @@ def require_env(name: str) -> str:
 
 
 def get_oai_client() -> OpenAI:
-    # OPENAI_API_KEY zorunlu
     require_env("OPENAI_API_KEY")
     return OpenAI()
 
 
 def build_prompt(now_tr: datetime) -> List[Dict[str, Any]]:
-    """
-    Modelden iki şey istiyoruz:
-      1) Türkiye'de bugün en çok konuşulan 10 konu başlığı (çok kısa)
-      2) Bu gündemi özetleyen 4–5 adet, 270 karakteri geçmeyen, Türkçe tweet (thread olarak paylaşılacak)
-    """
     date_str = now_tr.strftime("%d %B %Y, %A %H:%M (TR)")
     sys_msg = (
         "Sen sosyal medya için Türkçe içerik üreten, özetlemeyi iyi yapan bir asistansın. "
@@ -70,16 +73,88 @@ Kurallar:
     ]
 
 
+def call_openai_with_retry(client: OpenAI, messages: List[Dict[str, Any]], model: str) -> Dict[str, Any]:
+    """OpenAI chat.completions.create için retry + backoff + hata haritalama."""
+    last_err = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+                timeout=60,
+            )
+            content = resp.choices[0].message.content
+            return json.loads(content)
+        except RateLimitError as e:
+            last_err = e
+            # Kota veya rate limit
+            msg = str(getattr(e, "message", e))
+            print(f"[WARN] OpenAI RateLimitError (attempt {attempt}/{MAX_RETRIES}): {msg}")
+        except (APIConnectionError, APITimeoutError) as e:
+            last_err = e
+            print(f"[WARN] OpenAI bağlantı/timeout (attempt {attempt}/{MAX_RETRIES}): {e}")
+        except APIError as e:
+            last_err = e
+            print(f"[WARN] OpenAI APIError (attempt {attempt}/{MAX_RETRIES}): {e}")
+        except Exception as e:
+            last_err = e
+            print(f"[WARN] OpenAI beklenmeyen hata (attempt {attempt}/{MAX_RETRIES}): {e}")
+
+        # backoff
+        sleep_s = BASE_DELAY * (2 ** (attempt - 1))
+        time.sleep(sleep_s)
+
+    # Tüm denemeler bitti
+    if isinstance(last_err, RateLimitError):
+        # Kota özel akış
+        if ON_QUOTA_EXCEEDED == "skip":
+            print("[INFO] insufficient_quota: skip modunda—tweet atılmayacak, job başarıyla sonlanacak.")
+            return {"topics": [], "tweets": [], "skip_due_to_quota": True}
+        elif ON_QUOTA_EXCEEDED == "template":
+            print("[INFO] insufficient_quota: template modunda—nötr bir şablon thread üretilecek.")
+            return {"topics": _fallback_topics(), "tweets": _fallback_tweets(), "fallback_template": True}
+        else:
+            print("[ERROR] insufficient_quota: fail modunda—hata yükseltilecek.")
+            raise last_err
+    # Kota dışı sürekli hata
+    raise last_err
+
+
+def _fallback_topics() -> List[str]:
+    """Model olmadan riskli iddialara girmeden genel başlık şablonları (zararsız)."""
+    return [
+        "Ekonomi ve piyasalar",
+        "Eğitim ve sınav gündemi",
+        "Sağlık ve yaşam",
+        "Spor ve transfer haberleri",
+        "Teknoloji ve dijital trendler",
+        "Kültür-sanat ve etkinlikler",
+        "Ulaşım ve şehir yaşamı",
+        "Hava durumu ve afet bilgilendirmeleri",
+        "İş dünyası ve girişimler",
+        "Gündelik yaşam pratikleri"
+    ]
+
+
+def _fallback_tweets() -> List[str]:
+    """Model/fresh veri yokken kullanılacak nötr/zararsız 4 tweetlik özet."""
+    return [
+        "Günün öne çıkan başlıkları ekonomi, eğitim, sağlık ve teknoloji etrafında yoğunlaşıyor. Gelişmeleri sade ve doğrulanabilir bilgilerle takip etmek, bilgi kirliliğinden kaçınmanın en güvenli yolu.",
+        "Piyasalardaki dalgalanmalara karşı uzun vadeli perspektif ve risk yönetimi öne çıkıyor. Eğitim ve sınav gündeminde planlı çalışma, kaynak doğrulama ve resmi duyuruları izlemek kritik.",
+        "Sağlık tarafında mevsimsel konular ve toplum sağlığı önerileri öne çıkıyor. Teknolojide yapay zekâ, siber güvenlik ve dijital güvenlik pratikleri gündemde.",
+        "Spor, kültür-sanat ve şehir yaşamında etkinlik yoğunluğu dikkat çekiyor. Güncel ve doğru bilgi için resmi kanalları izlemek en sağlıklı yaklaşım."
+    ]
+
+
 def generate_tr_trend_tweets(client: OpenAI, now_tr: datetime) -> Dict[str, Any]:
     messages = build_prompt(now_tr)
-    resp = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        temperature=0.7,
-        response_format={"type": "json_object"},
-    )
-    content = resp.choices[0].message.content
-    data = json.loads(content)
+    data = call_openai_with_retry(client, messages, MODEL)
+
+    # skip/template sinyalleri geldiyse direkt dön
+    if data.get("skip_due_to_quota") or data.get("fallback_template"):
+        return data
 
     topics = data.get("topics", [])
     tweets = data.get("tweets", [])
@@ -90,8 +165,7 @@ def generate_tr_trend_tweets(client: OpenAI, now_tr: datetime) -> Dict[str, Any]
 
     # En az 4 tweet garanti
     if len(tweets) < 4:
-        # Tweet sayısı yetersizse, başlıklardan kısa özet döşeyelim
-        extra = [f"Özet: {t[:230]}" for t in topics[len(tweets):len(tweets)+ (4-len(tweets))]]
+        extra = [f"Özet: {t[:230]}" for t in topics[len(tweets):len(tweets)+(4-len(tweets))]]
         tweets.extend(extra)
 
     return {"topics": topics, "tweets": tweets}
@@ -104,68 +178,9 @@ def post_tweet_oauth1(status: str, reply_to_id: str = None) -> Dict[str, Any]:
     access_secret = require_env("TWITTER_ACCESS_TOKEN_SECRET")
 
     auth = OAuth1(api_key, api_secret, access_token, access_secret)
-    payload = {
-        "status": status
-    }
+    payload = {"status": status}
     if reply_to_id:
         payload["in_reply_to_status_id"] = reply_to_id
         payload["auto_populate_reply_metadata"] = "true"
 
-    r = requests.post(TW_POST_ENDPOINT, data=payload, auth=auth, timeout=30)
-    if r.status_code >= 400:
-        raise RuntimeError(f"Twitter API error {r.status_code}: {r.text}")
-    return r.json()
-
-
-def post_thread(tweets: List[str]) -> List[Dict[str, Any]]:
-    results = []
-    in_reply_to = None
-    for i, tw in enumerate(tweets):
-        # Fazlalık kontrolü (Twitter 280 sınırı—biz 270 kestik ama emniyet)
-        text = tw.strip()
-        if len(text) > 280:
-            text = text[:279]
-        res = post_tweet_oauth1(text, reply_to_id=in_reply_to)
-        results.append(res)
-        in_reply_to = res.get("id_str")
-        time.sleep(2)  # X API nazik gecikme
-    return results
-
-
-def main():
-    now_tr = datetime.now(tz=TR_TZ)
-
-    client = get_oai_client()
-    bundle = generate_tr_trend_tweets(client, now_tr)
-    topics = bundle["topics"]
-    tweets = bundle["tweets"]
-
-    header = f"Türkiye Gündemi – {now_tr.strftime('%d %B %Y, %A')}\n"
-    header += "Günün çok konuşulan başlıkları: " + "; ".join(topics[:10])
-    # Header'ı ilk tweetin başına ekleyebiliriz, fakat 270 sınırı var.
-    # Bu nedenle ilk tweete kısa bir giriş yapalım:
-    intro = f"Türkiye gündemi ({now_tr.strftime('%d %B %Y')}):"
-    tweets = [f"{intro}"] + tweets
-    tweets = tweets[:5]  # Toplam 5 tweeti aşmayalım (intro + 4)
-
-    if not POST_TO_TWITTER:
-        print("=== DRY RUN (POST_TO_TWITTER != true) ===")
-        print("Konular (10):")
-        for i, t in enumerate(topics, 1):
-            print(f"{i:02d}. {t}")
-        print("\nTweet Thread (max 5):")
-        for i, tw in enumerate(tweets, 1):
-            print(f"[{i}] {tw}\n")
-        return
-
-    # Gönderim
-    try:
-        results = post_thread(tweets)
-        print("Thread gönderildi. İlk tweet id:", results[0].get("id_str"))
-    except Exception as e:
-        print("Gönderim hatası:", e)
-        raise
-
-
-if __name__ == "__main__":
-    main()
+    r = requests.post(TW_POST_ENDPOINT, data=payload, a
