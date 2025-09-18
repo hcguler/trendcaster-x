@@ -107,7 +107,7 @@ if not tweets:
 save_tweets_to_file(tweets)
 
 if POST_TO_TWITTER:
-    print('Twitter'a gönderiliyor...')
+    print('Twittera gönderiliyor...')
     post_thread_to_twitter(tweets)
 else:
     print('POST_TO_TWITTER false olarak ayarlı; sadece dosyaya kaydedildi.')
