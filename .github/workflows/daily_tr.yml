@@ -1,78 +1,36 @@
-name: Daily Turkey News Thread
+name: Daily Trends
 
 on:
   schedule:
-    # Her gün Türkiye saati 17:00 (UTC 14:00) 
-    - cron: '0 14 * * *'
-  workflow_dispatch:  # Manuel tetikleme için
-
-permissions:
-  contents: read
+    - cron: "17 * * *"
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
-  tweet-news:
+  post:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        persist-credentials: true
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: Add repo to PYTHONPATH
-      run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
-    
-    - name: Install dependencies from bot_requirements.yml
-      run: |
-        # Eğer bot_requirements.yml bir YAML dosyasıysa, önce txt'ye çevir
-        if [ -f "bot_requirements.yml" ]; then
-          echo "Converting bot_requirements.yml to requirements format..."
-          python -c "
-import yaml
-with open('bot_requirements.yml', 'r') as f:
-    deps = yaml.safe_load(f)
-    if isinstance(deps, dict) and 'dependencies' in deps:
-        deps = deps['dependencies']
-    elif isinstance(deps, dict) and 'pip' in deps:
-        deps = deps['pip']
-    
-    if isinstance(deps, list):
-        with open('temp_requirements.txt', 'w') as out:
-            for dep in deps:
-                out.write(f'{dep}\n')
-    else:
-        print('Unknown format in bot_requirements.yml')
-          " || echo "Failed to parse YAML, using direct install"
-          
-          # YAML parse başarısız olursa doğrudan gerekli paketleri yükle
-          pip install pyyaml
-          pip install openai==0.28.1 feedparser==6.0.10 python-dotenv==1.0.0 tweepy==4.14.0
-          
-          # Eğer temp_requirements.txt oluşturulduysa onu kullan
-          [ -f "temp_requirements.txt" ] && pip install -r temp_requirements.txt
-        else
-          # bot_requirements.yml yoksa, standard paketleri yükle
-          echo "bot_requirements.yml not found, installing default packages..."
-          pip install openai==0.28.1 feedparser==6.0.10 python-dotenv==1.0.0 tweepy==4.14.0
-        fi
-    
-    - name: Run Daily Turkey News Bot
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        MODEL: 'gpt-3.5-turbo'
-        POST_TO_TWITTER: ${{ secrets.POST_TO_TWITTER }}
-        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
-        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
-        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-        TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-      run: |
-        python -m scripts.daily_tr
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r bot_requirements.txt
+
+      - name: Add repo to PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Post image to X
+        env:
+          OPENAPI_API_KEY: ${{ secrets.OPENAPI_API_KEY }}
+          MODEL: ${{ secrets.MODEL }}
+          POST_TO_TWITTER: ${{ secrets.POST_TO_TWITTER }}
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        run: python -m scripts.daily_tr
