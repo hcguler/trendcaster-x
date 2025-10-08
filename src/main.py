@@ -16,6 +16,17 @@ POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
 MEDIA_UPLOAD_ENDPOINT = "https://upload.twitter.com/1.1/media/upload.json"
 OWNER_HANDLE = "@durbirbakiyim" # Footer'da görünsün diye kullanıcı adı
 CANVAS_W, CANVAS_H = 1080, 1080 # Görsel boyutu (kare)
+FACTS_START_Y = 350 # Görselin merkezine yakın başlangıç Y koordinatı
+
+# -------------------- Türkçe Yerelleştirme --------------------
+_TR_MONTHS = {
+    1:"Ocak", 2:"Şubat", 3:"Mart", 4:"Nisan", 5:"Mayıs", 6:"Haziran",
+    7:"Temmuz", 8:"Ağustos", 9:"Eylül", 10:"Ekim", 11:"Kasım", 12:"Aralık"
+}
+
+def tr_month_name(m: int) -> str:
+    """Ay numarasını Türkçe ada çevirir."""
+    return _TR_MONTHS.get(m, str(m))
 
 # -------------------- Env / OAuth --------------------
 def require_env(keys: List[str]) -> dict:
@@ -72,30 +83,31 @@ POST_SCHEMA = {
     "type": "OBJECT",
     "properties": {
         "analysis_title": {"type": "STRING", "description": "Analizin kısa ve merak uyandıran başlığı."},
-        "tweet_text": {"type": "STRING", "description": "160 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni. Başlık içermemelidir. (Toplam tweet limitine uyum için kısaltıldı)."},
+        "tweet_text": {"type": "STRING", "description": "160 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni."},
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Post ile ilgili en etkili 4 adet hashtag."},
+        "key_facts": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Trendle ilgili 3 adet, her biri maksimum 60 karakter olan çarpıcı ve bilgi içeren madde (bullet point)."}
     },
-    "propertyOrdering": ["analysis_title", "tweet_text", "hashtags"]
+    "propertyOrdering": ["analysis_title", "tweet_text", "hashtags", "key_facts"]
 }
 
 def generate_content_with_gemini(trend_keyword: str) -> dict:
-    """Gemini API'yi kullanarak post metni ve hashtag'leri oluşturur."""
+    """Gemini API'yi kullanarak post metni, hashtag'leri ve ana bilgileri oluşturur."""
     envs = require_env(["GEMINI_API_KEY"])
     API_KEY = envs["GEMINI_API_KEY"]
     
-    # API çağrısı için istemci oluşturulur
     client = genai.Client(api_key=API_KEY)
 
     system_prompt = (
         "Sen, 'Dur Bir Bakayım' adlı bir X (Twitter) hesabının Veri Analistisin. "
-        "Görevin, sana verilen trend anahtar kelimesi hakkında e-ticaret, girişimcilik veya teknoloji perspektifinden hızlı ve ticari değeri olan bir analiz sunmaktır. "
+        "Görevin, sana verilen trend anahtar kelimesi hakkında e-ticaret, girişimcilik veya teknoloji perspektifinden hızlı, güncel ve ticari değeri olan bir analiz sunmaktır. "
         "Çıktı sadece JSON formatında olmalı ve şu kurallara uymalıdır: "
         "1. Analiz başlığı (analysis_title) 3-5 kelime olmalı, emoji içermemelidir. "
         "2. Post metni (tweet_text) **160 karakteri kesinlikle geçmemelidir**. 'Dur bir bakayım' formatına uygun olarak merak uyandırmalı ve sonunda mutlaka bir soru sormalıdır. "
-        "3. Hashtag'ler güncel, ilgili ve Türkçe olmalıdır."
+        "3. Hashtag'ler güncel, ilgili ve Türkçe olmalıdır. "
+        "4. Key_facts listesi için, trendle ilgili internetten bulduğun en güncel ve ilgi çekici 3 gelişmeyi veya veriyi, her madde maksimum 60 karakter olacak şekilde oluştur."
     )
 
-    user_query = f"Bugünün Google Trend kelimesi: '{trend_keyword}'. Bu kelimenin e-ticaret veya girişimcilik potansiyelini analiz et, X post metnini ve hashtag'lerini oluştur."
+    user_query = f"Bugünün Google Trend kelimesi: '{trend_keyword}'. Bu kelimenin e-ticaret veya girişimcilik potansiyelini analiz et. X post metnini, hashtag'lerini ve görselde gösterilecek 3 ana bilgiyi oluştur."
 
     print("⏳ Gemini'ye içerik oluşturma isteği gönderiliyor...")
 
@@ -111,7 +123,6 @@ def generate_content_with_gemini(trend_keyword: str) -> dict:
             }
         )
 
-        # Yanıt içeriğini JSON olarak parse et
         json_string = response.text.strip()
         print("✅ Gemini Yanıtı Alındı (JSON)")
         return json.loads(json_string)
@@ -122,7 +133,8 @@ def generate_content_with_gemini(trend_keyword: str) -> dict:
         return {
             "analysis_title": "Veri Analiz Hatası",
             "tweet_text": f"🚨 Dur Bir Bakayım: '{trend_keyword}' trendini analiz ederken hata oluştu. Yine de bu kelimeye bir bak! 🤔 Bu kelime sana ne ifade ediyor?",
-            "hashtags": ["#durbirbakiyim", "#TrendAnaliz", "#GeminiAI", "#Gündem"]
+            "hashtags": ["#durbirbakiyim", "#TrendAnaliz", "#GeminiAI", "#Gündem"],
+            "key_facts": ["Trend verisi yüklenemedi.", "Güncel bilgiye ulaşılamadı.", "Girişim fırsatını sen bul!"]
         }
 
 # -------------------- Görsel yardımcıları --------------------
@@ -141,72 +153,52 @@ def load_font(size: int):
                 pass
     return ImageFont.load_default()
 
-def make_branded_image(title: str, trend_text: str) -> bytes:
-    """Trend adını içeren markalı bir görsel oluşturur."""
+def make_branded_image(title: str, key_facts: List[str]) -> bytes:
+    """Trendle ilgili 3 ana bilgiyi içeren markalı bir görsel oluşturur."""
     W, H = CANVAS_W, CANVAS_H
     img = Image.new("RGB", (W, H), color=(248, 250, 252)) # Açık Mavi/Gri Arkaplan
     draw = ImageDraw.Draw(img)
 
     # Yazı tipleri
     brand_font = load_font(60)
-    trend_font = load_font(90)
+    fact_font = load_font(48) # Bilgi maddeleri için daha küçük font
     foot_font  = load_font(32)
 
-    # 1. Başlık: 'DUR BİR BAKAYIM'
-    brand_text = "🚨 DUR BİR BAKAYIM ANALİZİ"
-    # anchor="mm" kullanıldığında x,y noktası merkeze hizalanır
+    # 1. Başlık: 'DUR BİR BAKAYIM ANALİZİ' (Mercek ikonu ile)
+    brand_text = "🔍 DUR BİR BAKAYIM ANALİZİ"
     draw.text((W // 2, 180), brand_text, fill=(40, 50, 60), font=brand_font, anchor="mm")
 
-    # 2. Ana Trend Metni (Otomatik Satır Sarma ve Merkezi)
-    words = trend_text.split()
-    line_limit = 18 # Karakter limiti (yaklaşık)
-    lines = []
-    current_line = ""
-
-    for word in words:
-        if len(current_line + " " + word) <= line_limit or not current_line:
-            current_line += (" " if current_line else "") + word
-        else:
-            lines.append(current_line)
-            current_line = word
-    if current_line:
-        lines.append(current_line)
-
-    # --- PILLOW DEPRECATED METHOD FIX ---
-    # Pillow'un yeni versiyonlarında getsize() metodu kaldırıldığı için textbbox() kullanılıyor.
-    line_heights = []
-    total_text_height = 0
-    line_spacing = 15 # Satırlar arası boşluk
-
-    for line in lines:
-        try:
-            # draw.textbbox(xy, text, font=font) -> (left, top, right, bottom)
-            bbox = draw.textbbox((0, 0), line, font=trend_font)
-            h = bbox[3] - bbox[1] # bottom - top
-        except Exception:
-            # Hata durumunda fontun varsayılan büyüklüğünü kullan
-            h = trend_font.size 
-
-        line_heights.append(h)
-        total_text_height += h + line_spacing
-
-    # Son satırın boşluğunu çıkar
-    if lines:
-        total_text_height -= line_spacing
+    # 2. Ana Bilgi Maddeleri (Key Facts)
     
-    # Metni ortalamak için başlangıç Y koordinatını bul
-    start_y = H // 2 - total_text_height // 2 + 50 # +50 Footer için kaydırır
-    
-    # Metni çiz
-    current_y = start_y
-    for line, h in zip(lines, line_heights):
-        # Anchor "mm" (middle-middle) kullanıldığı için, y'yi satır yüksekliğinin yarısı kadar kaydırarak merkezi pozisyonu buluyoruz.
-        draw.text((W // 2, current_y + h / 2), line, fill=(0, 100, 200), font=trend_font, anchor="mm")
-        current_y += h + line_spacing # Satır yüksekliği + aralık
-    # --- PILLOW DEPRECATED METHOD FIX END ---
+    line_spacing = 100 # Her madde arası boşluk
+    start_y = FACTS_START_Y # Sabit başlangıç koordinatı
+
+    for i, fact in enumerate(key_facts):
+        # Madde numarasını ve içeriği birleştir (Örn: "1. Trend verisi yüklenemedi.")
+        fact_line = f"⚫ {fact}" # Basit bir nokta işareti (bullet point)
+        
+        # Metin kutusu koordinatlarını hesaplama
+        bbox = draw.textbbox((0, 0), fact_line, font=fact_font)
+        fact_h = bbox[3] - bbox[1]
+
+        # Görseli X ekseninde merkezleme (Merkezleme yapmıyoruz, sol-ortadan başlatıyoruz)
+        x_pos = W // 2 # Merkeze yakın bir yerden başla
+        y_pos = start_y + i * line_spacing
+
+        # Merkeze hizalanmış tek bir metin yerine, her maddeyi ayrı ayrı çiziyoruz
+        draw.text(
+            (W // 2, y_pos), 
+            fact_line, 
+            fill=(0, 100, 200), 
+            font=fact_font, 
+            anchor="mm" # Metin kutusunun ortası (middle-middle) y pozisyonuna sabitlenir
+        )
 
     # 3. Footer — sahiplik
-    footer = f"Analiz Başlığı: {title} | {datetime.now(timezone(timedelta(hours=3))).strftime('%d %b %Y')}"
+    now_tr = datetime.now(timezone(timedelta(hours=3)))
+    date_str_tr = f"{now_tr.day:02d} {tr_month_name(now_tr.month)} {now_tr.year}"
+    footer = f"Analiz Başlığı: {title} | {date_str_tr}"
+    
     draw.text((W // 2, H - 100), footer, fill=(90, 100, 110), font=foot_font, anchor="ms")
 
     buf = io.BytesIO()
@@ -265,21 +257,20 @@ def main():
         analysis_title = gemini_data["analysis_title"]
         tweet_text = gemini_data["tweet_text"]
         hashtags = " ".join(f"#{tag.strip('#')}" for tag in gemini_data["hashtags"])
-        
+        key_facts = gemini_data.get("key_facts", []) # Yeni bilgi listesini çek
+
         # Post metnine hashtag'leri ve affiliate/çağrı satırını ekle
         final_tweet_text = f"🚨 {analysis_title}\n\n{tweet_text}\n\n{hashtags}\n\n{OWNER_HANDLE}"
         
         # X karakter limitini kontrol et (280)
-        # Gemini'den gelen metin 160 karaktere çekildiği için buraya nadiren düşülecektir.
         if len(final_tweet_text) > 280:
             print(f"UYARI: Tweet metni 280 karakteri aşıyor. Kırpılıyor. Uzunluk: {len(final_tweet_text)}")
-            # Güvenli kırpma: '...' (3 karakter) için yer bırak
             final_tweet_text = final_tweet_text[:277] + "..."
             
         print(f"📝 Son Tweet Uzunluğu: {len(final_tweet_text)}")
 
-        # 4. Görsel Oluşturma (Yeni markalı görsel)
-        image_bytes = make_branded_image(analysis_title, trending_topic)
+        # 4. Görsel Oluşturma (Yeni markalı görsel - Anahtar bilgileri görselde gösterir)
+        image_bytes = make_branded_image(analysis_title, key_facts)
 
         # 5. X'e Post Atma
         oauth = oauth1_session_from_env()
@@ -288,7 +279,6 @@ def main():
 
     except Exception as e:
         print(f"!!! KRİTİK HATA - İşlem Başarısız: {e}", file=sys.stderr)
-        # Hata izleme (traceback) ekleyerek neden çöktüğünü Actions loglarında görmenizi sağlar
         import traceback
         traceback.print_exc(file=sys.stderr)
         sys.exit(1) # Hata kodu 1'i tekrardan döndürüyoruz
