@@ -16,7 +16,7 @@ POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
 MEDIA_UPLOAD_ENDPOINT = "https://upload.twitter.com/1.1/media/upload.json"
 OWNER_HANDLE = "@durbirbakiyim" # Footer'da görünsün diye kullanıcı adı
 CANVAS_W, CANVAS_H = 1080, 1080 # Görsel boyutu (kare)
-FACTS_START_Y = 350 # Görselin merkezine yakın başlangıç Y koordinatı
+FACTS_START_Y = 320 # Görselin merkezine yakın başlangıç Y koordinatı
 
 # -------------------- Türkçe Yerelleştirme --------------------
 _TR_MONTHS = {
@@ -85,7 +85,7 @@ POST_SCHEMA = {
         "analysis_title": {"type": "STRING", "description": "Analizin kısa ve merak uyandıran başlığı."},
         "tweet_text": {"type": "STRING", "description": "160 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni."},
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Post ile ilgili en etkili 4 adet hashtag."},
-        "key_facts": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Trendle ilgili 3 adet, her biri maksimum 60 karakter olan çarpıcı ve bilgi içeren madde (bullet point)."}
+        "key_facts": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Trendle ilgili 3 adet, her biri maksimum 50 karakter olan, ticari potansiyele odaklanan, çarpıcı ve güncel bilgi/veri içeren madde (bullet point)."}
     },
     "propertyOrdering": ["analysis_title", "tweet_text", "hashtags", "key_facts"]
 }
@@ -99,12 +99,12 @@ def generate_content_with_gemini(trend_keyword: str) -> dict:
 
     system_prompt = (
         "Sen, 'Dur Bir Bakayım' adlı bir X (Twitter) hesabının Veri Analistisin. "
-        "Görevin, sana verilen trend anahtar kelimesi hakkında e-ticaret, girişimcilik veya teknoloji perspektifinden hızlı, güncel ve ticari değeri olan bir analiz sunmaktır. "
+        "Görevin, sana verilen trend anahtar kelimesi hakkında **e-ticaret, dropshipping, veya teknoloji girişimciliği** perspektifinden hızlı, güncel ve **ticari değeri olan çarpıcı verilerle** bir analiz sunmaktır. "
         "Çıktı sadece JSON formatında olmalı ve şu kurallara uymalıdır: "
         "1. Analiz başlığı (analysis_title) 3-5 kelime olmalı, emoji içermemelidir. "
         "2. Post metni (tweet_text) **160 karakteri kesinlikle geçmemelidir**. 'Dur bir bakayım' formatına uygun olarak merak uyandırmalı ve sonunda mutlaka bir soru sormalıdır. "
         "3. Hashtag'ler güncel, ilgili ve Türkçe olmalıdır. "
-        "4. Key_facts listesi için, trendle ilgili internetten bulduğun en güncel ve ilgi çekici 3 gelişmeyi veya veriyi, her madde maksimum 60 karakter olacak şekilde oluştur."
+        "4. Key_facts listesi için, trendle ilgili internetten bulduğun **en güncel, ticari potansiyeli gösteren** ve ilgi çekici 3 gelişmeyi veya veriyi, her madde **maksimum 50 karakter** olacak şekilde oluştur. Bu maddeler görselin odak noktası olacaktır."
     )
 
     user_query = f"Bugünün Google Trend kelimesi: '{trend_keyword}'. Bu kelimenin e-ticaret veya girişimcilik potansiyelini analiz et. X post metnini, hashtag'lerini ve görselde gösterilecek 3 ana bilgiyi oluştur."
@@ -141,9 +141,11 @@ def generate_content_with_gemini(trend_keyword: str) -> dict:
 def load_font(size: int):
     """Sistemde yüklü bir TrueType fontu yükler."""
     candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", # Kalın font tercih edildi
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        # Ubuntu üzerinde sık bulunan fontlar
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        # Ubuntu üzerinde sık bulunan fontlar
     ]
     for path in candidates:
         if os.path.exists(path):
@@ -156,40 +158,39 @@ def load_font(size: int):
 def make_branded_image(title: str, key_facts: List[str]) -> bytes:
     """Trendle ilgili 3 ana bilgiyi içeren markalı bir görsel oluşturur."""
     W, H = CANVAS_W, CANVAS_H
-    img = Image.new("RGB", (W, H), color=(248, 250, 252)) # Açık Mavi/Gri Arkaplan
+    # Daha profesyonel ve kontrastlı renkler
+    BG_COLOR = (240, 245, 250)
+    TEXT_COLOR = (20, 30, 40)
+    HIGHLIGHT_COLOR = (0, 102, 204) # Mavi
+
+    img = Image.new("RGB", (W, H), color=BG_COLOR)
     draw = ImageDraw.Draw(img)
 
     # Yazı tipleri
     brand_font = load_font(60)
-    fact_font = load_font(48) # Bilgi maddeleri için daha küçük font
+    fact_font = load_font(40) # Font boyutu 48'den 40'a düşürüldü (Taşmayı önlemek için)
     foot_font  = load_font(32)
 
     # 1. Başlık: 'DUR BİR BAKAYIM ANALİZİ' (Mercek ikonu ile)
     brand_text = "🔍 DUR BİR BAKAYIM ANALİZİ"
-    draw.text((W // 2, 180), brand_text, fill=(40, 50, 60), font=brand_font, anchor="mm")
-
+    draw.text((W // 2, 180), brand_text, fill=TEXT_COLOR, font=brand_font, anchor="mm")
+    
     # 2. Ana Bilgi Maddeleri (Key Facts)
     
-    line_spacing = 100 # Her madde arası boşluk
-    start_y = FACTS_START_Y # Sabit başlangıç koordinatı
+    line_spacing = 110 # Satırlar arası boşluk artırıldı (Taşmayı önlemek için)
+    start_y = FACTS_START_Y 
 
     for i, fact in enumerate(key_facts):
-        # Madde numarasını ve içeriği birleştir (Örn: "1. Trend verisi yüklenemedi.")
-        fact_line = f"⚫ {fact}" # Basit bir nokta işareti (bullet point)
+        # Basit bir nokta işareti yerine, daha belirgin bir karakter kullanılıyor
+        fact_line = f"● {fact.strip()}" 
         
-        # Metin kutusu koordinatlarını hesaplama
-        bbox = draw.textbbox((0, 0), fact_line, font=fact_font)
-        fact_h = bbox[3] - bbox[1]
-
-        # Görseli X ekseninde merkezleme (Merkezleme yapmıyoruz, sol-ortadan başlatıyoruz)
-        x_pos = W // 2 # Merkeze yakın bir yerden başla
         y_pos = start_y + i * line_spacing
 
-        # Merkeze hizalanmış tek bir metin yerine, her maddeyi ayrı ayrı çiziyoruz
+        # Metni çiz
         draw.text(
             (W // 2, y_pos), 
             fact_line, 
-            fill=(0, 100, 200), 
+            fill=HIGHLIGHT_COLOR, 
             font=fact_font, 
             anchor="mm" # Metin kutusunun ortası (middle-middle) y pozisyonuna sabitlenir
         )
@@ -199,7 +200,11 @@ def make_branded_image(title: str, key_facts: List[str]) -> bytes:
     date_str_tr = f"{now_tr.day:02d} {tr_month_name(now_tr.month)} {now_tr.year}"
     footer = f"Analiz Başlığı: {title} | {date_str_tr}"
     
-    draw.text((W // 2, H - 100), footer, fill=(90, 100, 110), font=foot_font, anchor="ms")
+    draw.text((W // 2, H - 100), footer, fill=TEXT_COLOR, font=foot_font, anchor="ms")
+
+    # Çerçeve Ekleme (Opsiyonel ama estetiği artırır)
+    draw.rectangle([50, 50, W - 50, H - 50], outline=HIGHLIGHT_COLOR, width=5)
+
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
