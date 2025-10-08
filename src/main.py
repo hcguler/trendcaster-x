@@ -72,7 +72,7 @@ POST_SCHEMA = {
     "type": "OBJECT",
     "properties": {
         "analysis_title": {"type": "STRING", "description": "Analizin kısa ve merak uyandıran başlığı."},
-        "tweet_text": {"type": "STRING", "description": "180 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni. Başlık içermemelidir. (Toplam tweet limitine uyum için azaltıldı)."},
+        "tweet_text": {"type": "STRING", "description": "160 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni. Başlık içermemelidir. (Toplam tweet limitine uyum için kısaltıldı)."},
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Post ile ilgili en etkili 4 adet hashtag."},
     },
     "propertyOrdering": ["analysis_title", "tweet_text", "hashtags"]
@@ -91,7 +91,7 @@ def generate_content_with_gemini(trend_keyword: str) -> dict:
         "Görevin, sana verilen trend anahtar kelimesi hakkında e-ticaret, girişimcilik veya teknoloji perspektifinden hızlı ve ticari değeri olan bir analiz sunmaktır. "
         "Çıktı sadece JSON formatında olmalı ve şu kurallara uymalıdır: "
         "1. Analiz başlığı (analysis_title) 3-5 kelime olmalı, emoji içermemelidir. "
-        "2. Post metni (tweet_text) 180 karakteri kesinlikle geçmemelidir. 'Dur bir bakayım' formatına uygun olarak merak uyandırmalı ve sonunda mutlaka bir soru sormalıdır. "
+        "2. Post metni (tweet_text) **160 karakteri kesinlikle geçmemelidir**. 'Dur bir bakayım' formatına uygun olarak merak uyandırmalı ve sonunda mutlaka bir soru sormalıdır. "
         "3. Hashtag'ler güncel, ilgili ve Türkçe olmalıdır."
     )
 
@@ -232,9 +232,21 @@ def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
     """Metin ve media ID ile tweet atar."""
     payload = {"text": text, "media": {"media_ids": [media_id]}}
     resp = oauth.post(POST_TWEET_ENDPOINT, json=payload)
+    
+    # YENİ KONTROL: 403 Forbidden Hatası için özel mesaj
+    if resp.status_code == 403:
+        print("-" * 50, file=sys.stderr)
+        print("!!! KRİTİK X API HATASI: 403 YASAK (FORBIDDEN) !!!", file=sys.stderr)
+        print("Gerekli izinleriniz eksik veya tokenlarınız yanlış. Lütfen X/Twitter geliştirici portalına gidin ve:", file=sys.stderr)
+        print("1. Uygulamanızın **Permissions (İzinler)** bölümünde **Read and Write (Oku ve Yaz)** iznine sahip olduğundan emin olun.", file=sys.stderr)
+        print("2. Environment variable/secret'larınızı (TWITTER_...) doğru şekilde girdiğinizi kontrol edin.", file=sys.stderr)
+        print("-" * 50, file=sys.stderr)
+        sys.exit(2)
+        
     if resp.status_code >= 400:
         print("X API Hatası (tweet):", resp.status_code, resp.text, file=sys.stderr)
         sys.exit(2)
+        
     data = resp.json()
     tweet_id = (data or {}).get("data", {}).get("id")
     print(f"✅ Başarılı Tweet ID: {tweet_id}")
@@ -258,7 +270,7 @@ def main():
         final_tweet_text = f"🚨 {analysis_title}\n\n{tweet_text}\n\n{hashtags}\n\n{OWNER_HANDLE}"
         
         # X karakter limitini kontrol et (280)
-        # Gemini'den gelen metin 180 karaktere çekildiği için buraya nadiren düşülecektir.
+        # Gemini'den gelen metin 160 karaktere çekildiği için buraya nadiren düşülecektir.
         if len(final_tweet_text) > 280:
             print(f"UYARI: Tweet metni 280 karakteri aşıyor. Kırpılıyor. Uzunluk: {len(final_tweet_text)}")
             # Güvenli kırpma: '...' (3 karakter) için yer bırak
