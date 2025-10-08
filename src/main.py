@@ -9,6 +9,7 @@ from requests_oauthlib import OAuth1Session
 from PIL import Image, ImageDraw, ImageFont
 from pytrends.request import TrendReq
 from google import genai
+import traceback # Hata izleme için eklendi
 
 # -------------------- Sabitler --------------------
 POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
@@ -71,7 +72,7 @@ POST_SCHEMA = {
     "type": "OBJECT",
     "properties": {
         "analysis_title": {"type": "STRING", "description": "Analizin kısa ve merak uyandıran başlığı."},
-        "tweet_text": {"type": "STRING", "description": "250 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni. Başlık içermemelidir."},
+        "tweet_text": {"type": "STRING", "description": "180 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni. Başlık içermemelidir. (Toplam tweet limitine uyum için azaltıldı)."},
         "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Post ile ilgili en etkili 4 adet hashtag."},
     },
     "propertyOrdering": ["analysis_title", "tweet_text", "hashtags"]
@@ -90,7 +91,7 @@ def generate_content_with_gemini(trend_keyword: str) -> dict:
         "Görevin, sana verilen trend anahtar kelimesi hakkında e-ticaret, girişimcilik veya teknoloji perspektifinden hızlı ve ticari değeri olan bir analiz sunmaktır. "
         "Çıktı sadece JSON formatında olmalı ve şu kurallara uymalıdır: "
         "1. Analiz başlığı (analysis_title) 3-5 kelime olmalı, emoji içermemelidir. "
-        "2. Post metni (tweet_text) 250 karakteri geçmemeli. 'Dur bir bakayım' formatına uygun olarak merak uyandırmalı ve sonunda mutlaka bir soru sormalıdır. "
+        "2. Post metni (tweet_text) 180 karakteri kesinlikle geçmemelidir. 'Dur bir bakayım' formatına uygun olarak merak uyandırmalı ve sonunda mutlaka bir soru sormalıdır. "
         "3. Hashtag'ler güncel, ilgili ve Türkçe olmalıdır."
     )
 
@@ -153,6 +154,7 @@ def make_branded_image(title: str, trend_text: str) -> bytes:
 
     # 1. Başlık: 'DUR BİR BAKAYIM'
     brand_text = "🚨 DUR BİR BAKAYIM ANALİZİ"
+    # anchor="mm" kullanıldığında x,y noktası merkeze hizalanır
     draw.text((W // 2, 180), brand_text, fill=(40, 50, 60), font=brand_font, anchor="mm")
 
     # 2. Ana Trend Metni (Otomatik Satır Sarma ve Merkezi)
@@ -171,7 +173,19 @@ def make_branded_image(title: str, trend_text: str) -> bytes:
         lines.append(current_line)
 
     # Metni ortalamak için başlangıç Y koordinatı
-    text_height = sum(trend_font.getsize(line)[1] for line in lines)
+    # Pillow'un font metriklerinin Action ortamında sağlıklı çalışmasını garanti etmek için
+    # try-except ile yükseklik hesaplama mantığına ek koruma ekledik.
+    try:
+        def get_text_height(text, font):
+            # Text bounding box'ı ile yüksekliği daha güvenli hesapla
+            l, t, r, b = draw.textbbox((0, 0), text, font=font)
+            return b - t
+
+        text_height = sum(get_text_height(line, trend_font) for line in lines)
+    except Exception:
+        # Hata durumunda tahmini satır yüksekliği kullan
+        text_height = len(lines) * 95 
+        
     start_y = H // 2 - text_height // 2 + 50 # Ortaya yerleştirme
 
     for line in lines:
@@ -216,33 +230,44 @@ def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
 
 # -------------------- main --------------------
 def main():
-    # 1. Trend Tespiti
-    trending_topic = get_daily_trending_topic()
+    try:
+        # 1. Trend Tespiti
+        trending_topic = get_daily_trending_topic()
 
-    # 2. İçerik Oluşturma (Gemini)
-    gemini_data = generate_content_with_gemini(trending_topic)
-    
-    # 3. Post Metni ve Hashtag Hazırlama
-    analysis_title = gemini_data["analysis_title"]
-    tweet_text = gemini_data["tweet_text"]
-    hashtags = " ".join(f"#{tag.strip('#')}" for tag in gemini_data["hashtags"])
-    
-    # Post metnine hashtag'leri ve affiliate/çağrı satırını ekle
-    final_tweet_text = f"🚨 {analysis_title}\n\n{tweet_text}\n\n{hashtags}\n\n{OWNER_HANDLE}"
-    
-    # X karakter limitini kontrol et (280)
-    if len(final_tweet_text) > 280:
-        print(f"UYARI: Tweet metni 280 karakteri aşıyor. Kırpılıyor. Uzunluk: {len(final_tweet_text)}")
-        final_tweet_text = final_tweet_text[:277] + "..."
+        # 2. İçerik Oluşturma (Gemini)
+        gemini_data = generate_content_with_gemini(trending_topic)
+        
+        # 3. Post Metni ve Hashtag Hazırlama
+        analysis_title = gemini_data["analysis_title"]
+        tweet_text = gemini_data["tweet_text"]
+        hashtags = " ".join(f"#{tag.strip('#')}" for tag in gemini_data["hashtags"])
+        
+        # Post metnine hashtag'leri ve affiliate/çağrı satırını ekle
+        final_tweet_text = f"🚨 {analysis_title}\n\n{tweet_text}\n\n{hashtags}\n\n{OWNER_HANDLE}"
+        
+        # X karakter limitini kontrol et (280)
+        # Gemini'den gelen metin 180 karaktere çekildiği için buraya nadiren düşülecektir.
+        if len(final_tweet_text) > 280:
+            print(f"UYARI: Tweet metni 280 karakteri aşıyor. Kırpılıyor. Uzunluk: {len(final_tweet_text)}")
+            # Güvenli kırpma: '...' (3 karakter) için yer bırak
+            final_tweet_text = final_tweet_text[:277] + "..."
+            
+        print(f"📝 Son Tweet Uzunluğu: {len(final_tweet_text)}")
 
+        # 4. Görsel Oluşturma (Yeni markalı görsel)
+        image_bytes = make_branded_image(analysis_title, trending_topic)
 
-    # 4. Görsel Oluşturma (Yeni markalı görsel)
-    image_bytes = make_branded_image(analysis_title, trending_topic)
+        # 5. X'e Post Atma
+        oauth = oauth1_session_from_env()
+        media_id = upload_media(oauth, image_bytes)
+        post_tweet_with_media(oauth, final_tweet_text, media_id)
 
-    # 5. X'e Post Atma
-    oauth = oauth1_session_from_env()
-    media_id = upload_media(oauth, image_bytes)
-    post_tweet_with_media(oauth, final_tweet_text, media_id)
+    except Exception as e:
+        print(f"!!! KRİTİK HATA - İşlem Başarısız: {e}", file=sys.stderr)
+        # Hata izleme (traceback) ekleyerek neden çöktüğünü Actions loglarında görmenizi sağlar
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1) # Hata kodu 1'i tekrardan döndürüyoruz
 
 if __name__ == "__main__":
     main()
