@@ -172,26 +172,38 @@ def make_branded_image(title: str, trend_text: str) -> bytes:
     if current_line:
         lines.append(current_line)
 
-    # Metni ortalamak için başlangıç Y koordinatı
-    # Pillow'un font metriklerinin Action ortamında sağlıklı çalışmasını garanti etmek için
-    # try-except ile yükseklik hesaplama mantığına ek koruma ekledik.
-    try:
-        def get_text_height(text, font):
-            # Text bounding box'ı ile yüksekliği daha güvenli hesapla
-            l, t, r, b = draw.textbbox((0, 0), text, font=font)
-            return b - t
-
-        text_height = sum(get_text_height(line, trend_font) for line in lines)
-    except Exception:
-        # Hata durumunda tahmini satır yüksekliği kullan
-        text_height = len(lines) * 95 
-        
-    start_y = H // 2 - text_height // 2 + 50 # Ortaya yerleştirme
+    # --- PILLOW DEPRECATED METHOD FIX ---
+    # Pillow'un yeni versiyonlarında getsize() metodu kaldırıldığı için textbbox() kullanılıyor.
+    line_heights = []
+    total_text_height = 0
+    line_spacing = 15 # Satırlar arası boşluk
 
     for line in lines:
-        tw, th = trend_font.getsize(line)
-        draw.text((W // 2, start_y), line, fill=(0, 100, 200), font=trend_font, anchor="mm")
-        start_y += th + 10 # Satır arası boşluk
+        try:
+            # draw.textbbox(xy, text, font=font) -> (left, top, right, bottom)
+            bbox = draw.textbbox((0, 0), line, font=trend_font)
+            h = bbox[3] - bbox[1] # bottom - top
+        except Exception:
+            # Hata durumunda fontun varsayılan büyüklüğünü kullan
+            h = trend_font.size 
+
+        line_heights.append(h)
+        total_text_height += h + line_spacing
+
+    # Son satırın boşluğunu çıkar
+    if lines:
+        total_text_height -= line_spacing
+    
+    # Metni ortalamak için başlangıç Y koordinatını bul
+    start_y = H // 2 - total_text_height // 2 + 50 # +50 Footer için kaydırır
+    
+    # Metni çiz
+    current_y = start_y
+    for line, h in zip(lines, line_heights):
+        # Anchor "mm" (middle-middle) kullanıldığı için, y'yi satır yüksekliğinin yarısı kadar kaydırarak merkezi pozisyonu buluyoruz.
+        draw.text((W // 2, current_y + h / 2), line, fill=(0, 100, 200), font=trend_font, anchor="mm")
+        current_y += h + line_spacing # Satır yüksekliği + aralık
+    # --- PILLOW DEPRECATED METHOD FIX END ---
 
     # 3. Footer — sahiplik
     footer = f"Analiz Başlığı: {title} | {datetime.now(timezone(timedelta(hours=3))).strftime('%d %b %Y')}"
