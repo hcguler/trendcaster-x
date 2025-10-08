@@ -1,91 +1,24 @@
-# main.py
+import os
+import sys
+import io
+import json
 import random
-import os, sys, io
 from datetime import datetime, timezone, timedelta
 from typing import List, Tuple
 from requests_oauthlib import OAuth1Session
 from PIL import Image, ImageDraw, ImageFont
+from pytrends.request import TrendReq
+from google import genai
 
 # -------------------- Sabitler --------------------
 POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets"
 MEDIA_UPLOAD_ENDPOINT = "https://upload.twitter.com/1.1/media/upload.json"
-
-# Görsel boyutu (kare)
-CANVAS_W = 1080
-CANVAS_H = 1080
-
-# Footer'da görünsün diye kullanıcı adı
-OWNER_HANDLE = "@durbirbakiyim"
-
-# Başlık havuzu (2–3 kelime, emojisiz)
-CATCHY_TITLES = [
-    "Zaman Akışı",
-    "Takvim Hızı",
-    "Bugün Kaydı",
-    "Günlük Tempo",
-    "Zaman Nabzı",
-    "Kronometre Hal",
-    "Anın Özeti",
-    "Zaman Çizgisi",
-    "Günlük İlerleme",
-    "Takvim Nabzı",
-    "Zaman Ölçümü",
-    "Günün Durumu",
-    "Zaman Özeti",
-    "Bugün İlerleme",
-    "Takvim Özeti",
-    "Günlük Rapor",
-    "Zaman Grafiği",
-    "Anlık İlerleme",
-    "Zaman Panosu",
-    "Takvim Panosu",
-]
-
-# -------------------- Zaman yardımcıları --------------------
-def now_tr():
-    tz_tr = timezone(timedelta(hours=3))
-    return datetime.now(tz_tr)
-
-def year_progress(dt: datetime) -> float:
-    start = datetime(dt.year, 1, 1, tzinfo=dt.tzinfo)
-    end   = datetime(dt.year + 1, 1, 1, tzinfo=dt.tzinfo)
-    return (dt - start).total_seconds() / (end - start).total_seconds()
-
-def month_progress(dt: datetime) -> float:
-    start = datetime(dt.year, dt.month, 1, tzinfo=dt.tzinfo)
-    if dt.month == 12:
-        end = datetime(dt.year + 1, 1, 1, tzinfo=dt.tzinfo)
-    else:
-        end = datetime(dt.year, dt.month + 1, 1, tzinfo=dt.tzinfo)
-    return (dt - start).total_seconds() / (end - start).total_seconds()
-
-def day_progress(dt: datetime) -> float:
-    start = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo)
-    end   = start + timedelta(days=1)
-    return (dt - start).total_seconds() / (end - start).total_seconds()
-
-# -------------------- Yerelleştirme (TR) --------------------
-_TR_MONTHS = {
-    1:"Ocak", 2:"Şubat", 3:"Mart", 4:"Nisan", 5:"Mayıs", 6:"Haziran",
-    7:"Temmuz", 8:"Ağustos", 9:"Eylül", 10:"Ekim", 11:"Kasım", 12:"Aralık"
-}
-_TR_WEEKDAYS = {  # Monday=0
-    0:"Pazartesi", 1:"Salı", 2:"Çarşamba", 3:"Perşembe",
-    4:"Cuma", 5:"Cumartesi", 6:"Pazar"
-}
-
-def tr_month_name(m: int) -> str:
-    return _TR_MONTHS.get(m, str(m))
-
-def tr_weekday_name(wd: int) -> str:
-    return _TR_WEEKDAYS.get(wd, "")
-
-def format_tr_datetime_line(dt: datetime) -> str:
-    # dd.MM.yyyy HH:ss (günadı) — dakika yerine saniye istendi
-    return f"{dt.day:02d}.{dt.month:02d}.{dt.year:04d} ({tr_weekday_name(dt.weekday())}) {dt.hour:02d}:{dt.second:02d}"
+OWNER_HANDLE = "@durbirbakiyim" # Footer'da görünsün diye kullanıcı adı
+CANVAS_W, CANVAS_H = 1080, 1080 # Görsel boyutu (kare)
 
 # -------------------- Env / OAuth --------------------
 def require_env(keys: List[str]) -> dict:
+    """Gerekli ortam değişkenlerini kontrol eder ve çeker."""
     envs = {k: os.environ.get(k) for k in keys}
     missing = [k for k, v in envs.items() if not v]
     if missing:
@@ -94,6 +27,7 @@ def require_env(keys: List[str]) -> dict:
     return envs
 
 def oauth1_session_from_env() -> OAuth1Session:
+    """X/Twitter API için OAuth1 oturumu oluşturur."""
     envs = require_env([
         "TWITTER_API_KEY",
         "TWITTER_API_SECRET",
@@ -107,13 +41,96 @@ def oauth1_session_from_env() -> OAuth1Session:
         resource_owner_secret=envs["TWITTER_ACCESS_TOKEN_SECRET"],
     )
 
+# -------------------- Trend Tespiti (Pytrends) --------------------
+def get_daily_trending_topic() -> str:
+    """Türkiye'nin en popüler günlük arama trendini Google Trends'ten çeker."""
+    try:
+        # Pytrends örneğini oluştur
+        pytrends = TrendReq(hl='tr-TR', tz=180) # Türkiye (TR) ve UTC+3 (180 dakika) zaman dilimi
+
+        # Günlük Arama Trendlerini çek (ülke kodu: TR - Türkiye)
+        df = pytrends.trending_searches(pn='turkey')
+
+        if df.empty:
+            print("Pytrends: Trend verisi çekilemedi. Varsayılan metin kullanılıyor.")
+            return "teknolojik yenilikler" # Varsayılan fallback
+
+        # En üstteki (en popüler) trendi çek
+        # DataFrame genellikle 'title' veya ilk sütun olarak trendleri içerir
+        first_trend = df.iloc[0, 0]
+        print(f"✅ Google Trend Tespiti: '{first_trend}'")
+        return first_trend
+    except Exception as e:
+        print(f"Pytrends Hatası: {e}. Varsayılan metin kullanılıyor.")
+        return "yapay zeka gelişmeleri" # Başka bir varsayılan fallback
+
+# -------------------- İçerik Üretimi (Gemini API) --------------------
+
+# Gemini için JSON şeması (yapılandırılmış çıktı almak için)
+POST_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "analysis_title": {"type": "STRING", "description": "Analizin kısa ve merak uyandıran başlığı."},
+        "tweet_text": {"type": "STRING", "description": "250 karakteri geçmeyen, analizi ve merak uyandıran soruyu içeren ana post metni. Başlık içermemelidir."},
+        "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Post ile ilgili en etkili 4 adet hashtag."},
+    },
+    "propertyOrdering": ["analysis_title", "tweet_text", "hashtags"]
+}
+
+def generate_content_with_gemini(trend_keyword: str) -> dict:
+    """Gemini API'yi kullanarak post metni ve hashtag'leri oluşturur."""
+    envs = require_env(["GEMINI_API_KEY"])
+    API_KEY = envs["GEMINI_API_KEY"]
+    
+    # API çağrısı için istemci oluşturulur
+    client = genai.Client(api_key=API_KEY)
+
+    system_prompt = (
+        "Sen, 'Dur Bir Bakayım' adlı bir X (Twitter) hesabının Veri Analistisin. "
+        "Görevin, sana verilen trend anahtar kelimesi hakkında e-ticaret, girişimcilik veya teknoloji perspektifinden hızlı ve ticari değeri olan bir analiz sunmaktır. "
+        "Çıktı sadece JSON formatında olmalı ve şu kurallara uymalıdır: "
+        "1. Analiz başlığı (analysis_title) 3-5 kelime olmalı, emoji içermemelidir. "
+        "2. Post metni (tweet_text) 250 karakteri geçmemeli. 'Dur bir bakayım' formatına uygun olarak merak uyandırmalı ve sonunda mutlaka bir soru sormalıdır. "
+        "3. Hashtag'ler güncel, ilgili ve Türkçe olmalıdır."
+    )
+
+    user_query = f"Bugünün Google Trend kelimesi: '{trend_keyword}'. Bu kelimenin e-ticaret veya girişimcilik potansiyelini analiz et, X post metnini ve hashtag'lerini oluştur."
+
+    print("⏳ Gemini'ye içerik oluşturma isteği gönderiliyor...")
+
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-preview-05-20',
+            contents=user_query,
+            config={
+                'system_instruction': system_prompt,
+                'response_mime_type': 'application/json',
+                'response_schema': POST_SCHEMA,
+                'temperature': 0.7
+            }
+        )
+
+        # Yanıt içeriğini JSON olarak parse et
+        json_string = response.text.strip()
+        print("✅ Gemini Yanıtı Alındı (JSON)")
+        return json.loads(json_string)
+
+    except Exception as e:
+        print(f"Gemini API Hatası: {e}", file=sys.stderr)
+        # Hata durumunda varsayılan metin döndür
+        return {
+            "analysis_title": "Veri Analiz Hatası",
+            "tweet_text": f"🚨 Dur Bir Bakayım: '{trend_keyword}' trendini analiz ederken hata oluştu. Yine de bu kelimeye bir bak! 🤔 Bu kelime sana ne ifade ediyor?",
+            "hashtags": ["#durbirbakiyim", "#TrendAnaliz", "#GeminiAI", "#Gündem"]
+        }
+
 # -------------------- Görsel yardımcıları --------------------
 def load_font(size: int):
+    """Sistemde yüklü bir TrueType fontu yükler."""
     candidates = [
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-        "/Library/Fonts/Arial Unicode.ttf",
+        # Ubuntu üzerinde sık bulunan fontlar
     ]
     for path in candidates:
         if os.path.exists(path):
@@ -123,114 +140,61 @@ def load_font(size: int):
                 pass
     return ImageFont.load_default()
 
-def percent_str(p: float, digits: int = 2) -> str:
-    v = max(0.0, min(1.0, p)) * 100.0
-    return f"{v:.{digits}f}%"
-
-def draw_progress_bar(draw: ImageDraw.ImageDraw,
-                      x: int, y: int, width: int, height: int,
-                      progress: float,
-                      segments: int = 100,
-                      pad: int = 6,
-                      radius: int = 12):
-    draw.rounded_rectangle([x, y, x + width, y + height], radius=radius,
-                           fill=None, outline=(220,220,220), width=2)
-    total_inner_w = width - 2*pad
-    seg_gap = 2
-    seg_w = (total_inner_w - (segments - 1) * seg_gap) / segments
-    seg_h = height - 2*pad
-    filled_segments = int(round(max(0.0, min(1.0, progress)) * segments))
-
-    filled_color = (40,160,240)
-    empty_color  = (235,240,245)
-    edge = (255,255,255)
-
-    for i in range(segments):
-        seg_x = x + pad + i * (seg_w + seg_gap)
-        seg_y = y + pad
-        rect = [seg_x, seg_y, seg_x + seg_w, seg_y + seg_h]
-        draw.rectangle(rect, fill=(filled_color if i < filled_segments else empty_color))
-    draw.line([x + pad, y + pad, x + width - pad, y + pad], fill=edge, width=1)
-
-# -------------------- Başlık seçimi (tek kaynak) --------------------
-def select_title(now: datetime) -> str:
-    # Görseldekiyle tutarlı ve deterministik seçim
-    if not CATCHY_TITLES:
-        return "Zaman İlerlemesi"
-    idx = (now.timetuple().tm_yday * 24 + now.hour) % len(CATCHY_TITLES)
-    return CATCHY_TITLES[idx]
-
-# -------------------- Görsel oluşturma --------------------
-def make_image(now: datetime, title: str) -> bytes:
+def make_branded_image(title: str, trend_text: str) -> bytes:
+    """Trend adını içeren markalı bir görsel oluşturur."""
     W, H = CANVAS_W, CANVAS_H
-    img = Image.new("RGB", (W, H), color=(248,250,252))
+    img = Image.new("RGB", (W, H), color=(248, 250, 252)) # Açık Mavi/Gri Arkaplan
     draw = ImageDraw.Draw(img)
 
-    def text_wh(txt: str, font: ImageFont.ImageFont) -> Tuple[int,int]:
-        l, t, r, b = draw.textbbox((0,0), txt, font=font)
-        return (r-l, b-t)
-
     # Yazı tipleri
-    title_font = load_font(72)
-    date_font  = load_font(40)
-    label_font = load_font(44)
-    value_font = load_font(44)
-    foot_font  = load_font(28)
+    brand_font = load_font(60)
+    trend_font = load_font(90)
+    foot_font  = load_font(32)
 
-    # Kenar boşlukları ve ölçüler (kare tuvale göre ayarlandı)
-    margin_x = 80
-    top_y = 90
-    line_gap = 50
-    bar_h = 46
+    # 1. Başlık: 'DUR BİR BAKAYIM'
+    brand_text = "🚨 DUR BİR BAKAYIM ANALİZİ"
+    draw.text((W // 2, 180), brand_text, fill=(40, 50, 60), font=brand_font, anchor="mm")
 
-    # Başlık — DIŞARIDAN GELEN
-    tw, th = text_wh(title, title_font)
-    draw.text(((W - tw)//2, top_y), title, fill=(20,24,28), font=title_font)
+    # 2. Ana Trend Metni (Otomatik Satır Sarma ve Merkezi)
+    words = trend_text.split()
+    line_limit = 18 # Karakter limiti (yaklaşık)
+    lines = []
+    current_line = ""
 
-    # Türkçe tarih satırı
-    date_line = format_tr_datetime_line(now)
-    dw, dh = text_wh(date_line, date_font)
-    draw.text(((W - dw)//2, top_y + th + 16), date_line, fill=(80,90,100), font=date_font)
+    for word in words:
+        if len(current_line + " " + word) <= line_limit or not current_line:
+            current_line += (" " if current_line else "") + word
+        else:
+            lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
 
-    # İlerlemeler
-    yp, mp, dp = year_progress(now), month_progress(now), day_progress(now)
+    # Metni ortalamak için başlangıç Y koordinatı
+    text_height = sum(trend_font.getsize(line)[1] for line in lines)
+    start_y = H // 2 - text_height // 2 + 50 # Ortaya yerleştirme
 
-    section_y = top_y + th + 16 + dh + 70
-    blocks = [
-        (f"{now.year}", yp),
-        (f"{now.day} {tr_month_name(now.month)}", mp),
-        (f"{now.hour:02d}:{now.minute:02d} {tr_weekday_name(now.weekday())}", dp),
-    ]
+    for line in lines:
+        tw, th = trend_font.getsize(line)
+        draw.text((W // 2, start_y), line, fill=(0, 100, 200), font=trend_font, anchor="mm")
+        start_y += th + 10 # Satır arası boşluk
 
-    for idx, (label, p) in enumerate(blocks):
-        y = section_y + idx * (bar_h + 2 * line_gap + 24)
-        lw, lh = text_wh(label, label_font)
-        draw.text((margin_x, y), label, fill=(30,34,40), font=label_font)
-
-        val = percent_str(p, digits=2)
-        vw, vh = text_wh(val, value_font)
-        draw.text((W - margin_x - vw, y), val, fill=(30,34,40), font=value_font)
-
-        bar_y = y + lh + 18
-        draw_progress_bar(draw, x=margin_x, y=bar_y,
-                          width=W - 2*margin_x, height=bar_h,
-                          progress=p, segments=100, pad=6, radius=12)
-
-    # Footer — sahiplik ve nazik çağrı
-    footer = f"© {OWNER_HANDLE} — paylaşırsan beni etiketle; ben de uğrarım."
-    fw, fh = text_wh(footer, foot_font)
-    draw.text(((W - fw)//2, H - fh - 40), footer, fill=(90,100,110), font=foot_font)
+    # 3. Footer — sahiplik
+    footer = f"Analiz Başlığı: {title} | {datetime.now(timezone(timedelta(hours=3))).strftime('%d %b %Y')}"
+    draw.text((W // 2, H - 100), footer, fill=(90, 100, 110), font=foot_font, anchor="ms")
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
     return buf.getvalue()
 
-# -------------------- Medya yükleme & Tweet --------------------
+# -------------------- Medya yükleme & Tweet (Mevcut mantık korunmuştur) --------------------
 def upload_media(oauth: OAuth1Session, image_bytes: bytes) -> str:
-    files = {"media": ("progress.png", image_bytes, "image/png")}
+    """Görseli X API'ye yükler ve media ID'yi döndürür."""
+    files = {"media": ("trend.png", image_bytes, "image/png")}
     resp = oauth.post(MEDIA_UPLOAD_ENDPOINT, files=files)
     if resp.status_code >= 400:
         print("X API Hatası (media/upload):", resp.status_code, resp.text, file=sys.stderr)
+        # Hata durumunda ilerlemeyi durdur
         sys.exit(2)
     media_id = resp.json().get("media_id_string")
     if not media_id:
@@ -239,6 +203,7 @@ def upload_media(oauth: OAuth1Session, image_bytes: bytes) -> str:
     return media_id
 
 def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
+    """Metin ve media ID ile tweet atar."""
     payload = {"text": text, "media": {"media_ids": [media_id]}}
     resp = oauth.post(POST_TWEET_ENDPOINT, json=payload)
     if resp.status_code >= 400:
@@ -246,35 +211,38 @@ def post_tweet_with_media(oauth: OAuth1Session, text: str, media_id: str):
         sys.exit(2)
     data = resp.json()
     tweet_id = (data or {}).get("data", {}).get("id")
-    print(f"Başarılı ✅ Tweet ID: {tweet_id}")
+    print(f"✅ Başarılı Tweet ID: {tweet_id}")
     print(f"İçerik:\n{text}")
-
-# -------------------- Metin (caption) --------------------
-def build_caption(now: datetime, yp: float, mp: float, dp: float, title: str) -> str:
-    # Konumsuz, emojisiz, Türkçe ay adıyla
-    lines = [
-        title,  # Görseldekiyle aynı başlık
-        f"• {now.year}: {percent_str(yp, 2)}",
-        f"• {now.day} {tr_month_name(now.month)}: {percent_str(mp, 2)}",
-        f"• {now.hour:02d}:{now.minute:02d} {tr_weekday_name(now.weekday())}: {percent_str(dp, 2)}",
-        f"Beni takip etmeyi unutma {OWNER_HANDLE}, #TrendingNow, #Gündem, #TrendTweets",
-    ]
-    text = "\n".join(lines)
-    return (text[:279] + "…") if len(text) > 280 else text
 
 # -------------------- main --------------------
 def main():
-    now = now_tr()
-    # Tek bir başlık seç ve her yerde bunu kullan
-    title = select_title(now)
+    # 1. Trend Tespiti
+    trending_topic = get_daily_trending_topic()
 
-    yp, mp, dp = year_progress(now), month_progress(now), day_progress(now)
-    caption = build_caption(now, yp, mp, dp, title)
-    image_bytes = make_image(now, title)
+    # 2. İçerik Oluşturma (Gemini)
+    gemini_data = generate_content_with_gemini(trending_topic)
+    
+    # 3. Post Metni ve Hashtag Hazırlama
+    analysis_title = gemini_data["analysis_title"]
+    tweet_text = gemini_data["tweet_text"]
+    hashtags = " ".join(f"#{tag.strip('#')}" for tag in gemini_data["hashtags"])
+    
+    # Post metnine hashtag'leri ve affiliate/çağrı satırını ekle
+    final_tweet_text = f"🚨 {analysis_title}\n\n{tweet_text}\n\n{hashtags}\n\n{OWNER_HANDLE}"
+    
+    # X karakter limitini kontrol et (280)
+    if len(final_tweet_text) > 280:
+        print(f"UYARI: Tweet metni 280 karakteri aşıyor. Kırpılıyor. Uzunluk: {len(final_tweet_text)}")
+        final_tweet_text = final_tweet_text[:277] + "..."
 
+
+    # 4. Görsel Oluşturma (Yeni markalı görsel)
+    image_bytes = make_branded_image(analysis_title, trending_topic)
+
+    # 5. X'e Post Atma
     oauth = oauth1_session_from_env()
     media_id = upload_media(oauth, image_bytes)
-    post_tweet_with_media(oauth, caption, media_id)
+    post_tweet_with_media(oauth, final_tweet_text, media_id)
 
 if __name__ == "__main__":
     main()
