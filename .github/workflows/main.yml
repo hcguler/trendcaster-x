@@ -39,4 +39,4 @@ jobs:
           # X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           # TWEET_TEXT: ${{ secrets.TWEET_TEXT }}
         run: |
-          python src/main.py --post --limit 50
+          python src/main.py --post
