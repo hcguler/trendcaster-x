@@ -602,16 +602,21 @@ def post_tweet(oauth: OAuth1Session, text: str, media_id: str):
 def parse_args() -> argparse.Namespace:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser(description="BIST Multi-Period Kazanç Analiz Botu.")
-    parser.add_argument('--post', action='store_true', default=True, help='Görseli X/Twitter hesabına postala (Varsayılan).')
+    parser.add_argument('--post', action='store_true', default=False, help='Görseli X/Twitter hesabına postala.')
     parser.add_argument('--dry-run', action='store_true', help='Postalamadan sadece veri çek, görsel oluştur ve konsola yazdır.')
     parser.add_argument('--limit', type=int, default=6, help='Her tabloda gösterilecek hisse sayısı (default 6).')
     parser.add_argument('--out', type=str, default="bist_output.png", help='--dry-run modunda görselin kaydedileceği yol.')
     
-    # --post ve --dry-run aynı anda verilirse --dry-run kazanır
     args = parser.parse_args()
-    if args.dry-run:
-        args.post = False
     
+    # Argüman kontrolü düzeltildi: dry-run argümanı '_' ile erişilir
+    if args.dry_run:
+        args.post = False
+    elif not args.dry_run and not args.post:
+        # Varsayılan davranış: --post varsayılan olarak False yapıldığı için,
+        # komut satırında hiçbir şey verilmezse dry-run'ı etkinleştir.
+        args.dry_run = True 
+        
     return args
 
 def main():
