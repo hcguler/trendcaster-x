@@ -521,13 +521,24 @@ def render_table(
     header_labels = ["Hisse"] + [header_map.get(c, c) for c in col_order[1:]]
     for key, label in zip(labels, header_labels):
         width = COL_MAP[key]
-        draw.text(
-            (x_pos + width - 4, current_y),
-            label,
-            fill=(0, 0, 0),
-            font=header_font,
-            anchor="rt",
-        )
+        if key == "Hisse":
+            # ⬅️ Hisse sütun başlığı SOLA hizalı
+            draw.text(
+                (x_pos, current_y),
+                label,
+                fill=(0, 0, 0),
+                font=header_font,
+                anchor="lt",
+            )
+        else:
+            # ⬅️ Diğer başlıklar sağa hizalı kalsın
+            draw.text(
+                (x_pos + width - 4, current_y),
+                label,
+                fill=(0, 0, 0),
+                font=header_font,
+                anchor="rt",
+            )
         x_pos += width
 
     current_y += HEADER_H - 28
@@ -593,9 +604,9 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
     total_table_space = H - top_block_bottom - bottom_reserved
     per_table_fixed = TABLE_TITLE_H + (HEADER_H - 28) + 4 + 12  # başlık + header + çizgiler + padding
     space_for_rows = max(0, total_table_space - 2 * TABLE_GAP_Y - 3 * per_table_fixed)
-    rows_fit = max(3, min(limit, int(space_for_rows // (3 * ROW_H))))
-    if rows_fit < 3:
-        rows_fit = 3
+    rows_fit = max(5, min(limit, int(space_for_rows // (5 * ROW_H))))
+    if rows_fit < 5:
+        rows_fit = 5
 
     HEADER_MAP = {
         "ticker": "Hisse",
