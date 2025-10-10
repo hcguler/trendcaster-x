@@ -579,7 +579,7 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
     foot_font = load_font(20)
 
     # 1) Üst başlık (iki satır)
-    main_title = "🔍 DUR BİR BAKAYIM — BIST Analizi"
+    main_title = "DUR BİR BAKAYIM — BIST Analizi"
     draw.text((W // 2, MARGIN_Y), main_title, fill=(20, 30, 40), font=header_font, anchor="mm")
     draw.text((W // 2, MARGIN_Y + 44), f"({OWNER_HANDLE})", fill=(80, 90, 100), font=sub_header_font, anchor="mm")
 
@@ -614,7 +614,7 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
         draw,
         stock_data,
         current_y,
-        "🏆 Günün Kazandıranları",
+        "Günün Kazandıranları",
         "pct_1d",
         rows_fit,
         col_order_1d,
@@ -631,7 +631,7 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
         draw,
         stock_data,
         current_y,
-        "📈 Ayın Kazandıranları",
+        "Ayın Kazandıranları",
         "pct_1m",
         rows_fit,
         col_order_1m,
@@ -648,7 +648,7 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
         draw,
         stock_data,
         current_y,
-        "👑 Yılın Kazandıranları",
+        "Yılın Kazandıranları",
         "pct_1y",
         rows_fit,
         col_order_1y,
