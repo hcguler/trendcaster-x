@@ -48,7 +48,7 @@ CACHE_FILE = os.path.join(CACHE_DIR, "bist_latest.json")
 TR_TIMEZONE = timezone(timedelta(hours=3), "Europe/Istanbul")
 
 # Image Configuration (güncellenmiş)
-CANVAS_W, CANVAS_H = 1080, 1080
+CANVAS_W, CANVAS_H = 1280, 1280
 MARGIN_X, MARGIN_Y = 60, 90          # üst/yan boşluklar
 TABLE_TITLE_H = 36
 ROW_H = 42                           # satır yüksekliği azaltıldı
