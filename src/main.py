@@ -5,7 +5,7 @@ BIST Analiz Botu — Tek Dosya
 - Hafta içi 18:30 TSİ (cron/CI dışarıdan tetikleyecek) çalışır.
 - Web'den (provider A/B) BIST verilerini toplar, uzlaştırır, cache'ler.
 - Gemini ile kısa başlık + tweet metni + hashtag üretir (token dostu).
-- 1080×1080 tek görselde 3 tablo (Gün/Ay/Yıl kazandıranları) çizer.
+- 1080×1080 tek görselde 3 tablo (Gün/30 Gün/360 Gün kazandıranları) çizer.
 - X/Twitter'a görsel + tweet atar (OAuth1).
 CLI:
   python main.py --dry-run --limit 6 --out /tmp/bist.png
@@ -47,7 +47,7 @@ CACHE_DIR = ".cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "bist_latest.json")
 TR_TIMEZONE = timezone(timedelta(hours=3), "Europe/Istanbul")
 
-# Image Configuration (güncellenmiş)
+# Image Configuration
 CANVAS_W, CANVAS_H = 1280, 1280
 MARGIN_X, MARGIN_Y = 60, 90          # üst/yan boşluklar
 TABLE_TITLE_H = 36
@@ -91,30 +91,14 @@ def oauth1_session_from_env() -> OAuth1Session:
 
 
 # -----------------------------------
-# LOCALE HELPERS
+# LOCALE HELPERS / DYNAMIC DATES
 # -----------------------------------
 _TR_MONTHS = {
-    1: "Ocak",
-    2: "Şubat",
-    3: "Mart",
-    4: "Nisan",
-    5: "Mayıs",
-    6: "Haziran",
-    7: "Temmuz",
-    8: "Ağustos",
-    9: "Eylül",
-    10: "Ekim",
-    11: "Kasım",
-    12: "Aralık",
+    1: "Ocak", 2: "Şubat", 3: "Mart", 4: "Nisan", 5: "Mayıs", 6: "Haziran",
+    7: "Temmuz", 8: "Ağustos", 9: "Eylül", 10: "Ekim", 11: "Kasım", 12: "Aralık",
 }
 _TR_WEEKDAYS = {
-    0: "Pazartesi",
-    1: "Salı",
-    2: "Çarşamba",
-    3: "Perşembe",
-    4: "Cuma",
-    5: "Cumartesi",
-    6: "Pazar",
+    0: "Pazartesi", 1: "Salı", 2: "Çarşamba", 3: "Perşembe", 4: "Cuma", 5: "Cumartesi", 6: "Pazar",
 }
 
 
@@ -128,6 +112,27 @@ def tr_month_name(m: int) -> str:
 
 def tr_weekday_name(wd: int) -> str:
     return _TR_WEEKDAYS.get(wd, "")
+
+
+def get_dynamic_periods(now: datetime) -> Dict[str, Any]:
+    """Sorgulanan günden itibaren son 30 ve 360 günün etiketlerini oluşturur."""
+    dt_30d = now - timedelta(days=30)
+    dt_360d = now - timedelta(days=360)
+    
+    # pct_30d / pct_360d gibi anahtarlar
+    # 30 Günlük / 360 Günlük gibi başlıklar
+    return {
+        "period_30d": {
+            "key": "pct_30d",
+            "title": f"Son 30 Gün ({dt_30d.strftime('%d.%m')}-Bugün)",
+            "header": "30 Gün %",
+        },
+        "period_360d": {
+            "key": "pct_360d",
+            "title": f"Son 360 Gün ({dt_360d.strftime('%d.%m.%Y')}-Bugün)",
+            "header": "360 Gün %",
+        }
+    }
 
 
 # -----------------------------------
@@ -169,72 +174,47 @@ def get_common_headers() -> Dict[str, str]:
 )
 def fetch_provider_a() -> List[STOCK_MODEL]:
     """
-    Provider A: Investing.com TR (örnek). HTML değişirse bozulur — mock veri ile dolduruluyor.
+    Provider A: Investing.com TR (örnek). HTML değişirse bozulur — MOCK VERİLER YENİ ANAHTARLARLA DOLDURULUYOR.
     """
+    now = now_tr()
+    periods = get_dynamic_periods(now)
+    key_30d = periods["period_30d"]["key"]
+    key_360d = periods["period_360d"]["key"]
+    
     print(f"   [Provider A] Veri çekiliyor: {PROVIDER_A_URL}")
     try:
         _ = requests.get(PROVIDER_A_URL, headers=get_common_headers(), timeout=15)
         # --- Gerçek seçiciler burada olmalı ---
         stocks = [
             {
-                "ticker": "ASELS",
-                "name": "Aselsan",
-                "pct_1d": 8.5,
-                "pct_1m": 12.0,
-                "pct_3m": 20.1,
-                "pct_6m": 35.0,
-                "pct_1y": 95.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "ASELS", "name": "Aselsan",
+                "pct_1d": 8.5, key_30d: 12.0, "pct_3m": 20.1, "pct_6m": 35.0, key_360d: 95.0,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "THYAO",
-                "name": "THY",
-                "pct_1d": 7.2,
-                "pct_1m": 5.5,
-                "pct_3m": 10.5,
-                "pct_6m": 28.0,
-                "pct_1y": 110.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "THYAO", "name": "THY",
+                "pct_1d": 7.2, key_30d: 5.5, "pct_3m": 10.5, "pct_6m": 28.0, key_360d: 110.0,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "GARAN",
-                "name": "Garanti",
-                "pct_1d": 5.8,
-                "pct_1m": 15.2,
-                "pct_3m": 30.0,
-                "pct_6m": 45.0,
-                "pct_1y": 130.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "GARAN", "name": "Garanti",
+                "pct_1d": 5.8, key_30d: 15.2, "pct_3m": 30.0, "pct_6m": 45.0, key_360d: 130.0,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "EREGL",
-                "name": "Ereğli",
-                "pct_1d": 4.1,
-                "pct_1m": 1.0,
-                "pct_3m": 5.0,
-                "pct_6m": 15.0,
-                "pct_1y": 40.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "EREGL", "name": "Ereğli",
+                "pct_1d": 4.1, key_30d: 1.0, "pct_3m": 5.0, "pct_6m": 15.0, key_360d: 40.0,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "TUPRS",
-                "name": "Tüpraş",
-                "pct_1d": -2.5,
-                "pct_1m": 18.0,
-                "pct_3m": 40.0,
-                "pct_6m": 65.0,
-                "pct_1y": 150.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "TUPRS", "name": "Tüpraş",
+                "pct_1d": -2.5, key_30d: 18.0, "pct_3m": 40.0, "pct_6m": 65.0, key_360d: 150.0,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "BIMAS",
-                "name": "Bim",
-                "pct_1d": 9.0,
-                "pct_1m": -0.5,
-                "pct_3m": 15.0,
-                "pct_6m": 30.0,
-                "pct_1y": 80.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "BIMAS", "name": "Bim",
+                "pct_1d": 9.0, key_30d: -0.5, "pct_3m": 15.0, "pct_6m": 30.0, key_360d: 80.0,
+                "last_updated": now.timestamp(),
             },
         ]
         print(f"   [Provider A] {len(stocks)} hisse başarıyla çekildi (Mock).")
@@ -251,62 +231,42 @@ def fetch_provider_a() -> List[STOCK_MODEL]:
 )
 def fetch_provider_b() -> List[STOCK_MODEL]:
     """
-    Provider B: BloombergHT (örnek). HTML değişirse bozulur — mock veri ile dolduruluyor.
+    Provider B: BloombergHT (örnek). HTML değişirse bozulur — MOCK VERİLER YENİ ANAHTARLARLA DOLDURULUYOR.
     """
+    now = now_tr()
+    periods = get_dynamic_periods(now)
+    key_30d = periods["period_30d"]["key"]
+    key_360d = periods["period_360d"]["key"]
+    
     print(f"   [Provider B] Veri çekiliyor: {PROVIDER_B_URL}")
     try:
         _ = requests.get(PROVIDER_B_URL, headers=get_common_headers(), timeout=15)
         # --- Gerçek seçiciler burada olmalı ---
         stocks = [
             {
-                "ticker": "ASELS",
-                "name": "Aselsan",
-                "pct_1d": 8.4,
-                "pct_1m": 12.5,
-                "pct_3m": 20.0,
-                "pct_6m": 35.5,
-                "pct_1y": 94.8,
-                "last_updated": now_tr().timestamp() - 60,
+                "ticker": "ASELS", "name": "Aselsan",
+                "pct_1d": 8.4, key_30d: 12.5, "pct_3m": 20.0, "pct_6m": 35.5, key_360d: 94.8,
+                "last_updated": now.timestamp() - 60,
             },
             {
-                "ticker": "THYAO",
-                "name": "THY",
-                "pct_1d": 7.3,
-                "pct_1m": 5.4,
-                "pct_3m": 10.6,
-                "pct_6m": 28.1,
-                "pct_1y": 110.5,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "THYAO", "name": "THY",
+                "pct_1d": 7.3, key_30d: 5.4, "pct_3m": 10.6, "pct_6m": 28.1, key_360d: 110.5,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "GARAN",
-                "name": "Garanti",
-                "pct_1d": 5.8,
-                "pct_1m": 15.0,
-                "pct_3m": 30.1,
-                "pct_6m": 45.0,
-                "pct_1y": 130.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "GARAN", "name": "Garanti",
+                "pct_1d": 5.8, key_30d: 15.0, "pct_3m": 30.1, "pct_6m": 45.0, key_360d: 130.0,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "ISCTR",
-                "name": "İş Bankası",
-                "pct_1d": 6.5,
-                "pct_1m": 10.0,
-                "pct_3m": 25.0,
-                "pct_6m": 50.0,
-                "pct_1y": 120.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "ISCTR", "name": "İş Bankası",
+                "pct_1d": 6.5, key_30d: 10.0, "pct_3m": 25.0, "pct_6m": 50.0, key_360d: 120.0,
+                "last_updated": now.timestamp(),
             },
             {
-                "ticker": "TUPRS",
-                "name": "Tüpraş",
-                "pct_1d": -2.3,
-                "pct_1m": 18.2,
-                "pct_3m": 40.0,
-                "pct_6m": 65.2,
-                "pct_1y": 150.0,
-                "last_updated": now_tr().timestamp(),
+                "ticker": "TUPRS", "name": "Tüpraş",
+                "pct_1d": -2.3, key_30d: 18.2, "pct_3m": 40.0, "pct_6m": 65.2, key_360d: 150.0,
+                "last_updated": now.timestamp(),
             },
         ]
         print(f"   [Provider B] {len(stocks)} hisse başarıyla çekildi (Mock).")
@@ -322,6 +282,8 @@ def reconcile_data(data_a: List[STOCK_MODEL], data_b: List[STOCK_MODEL]) -> List
         return []
 
     all_data = {item["ticker"]: item for item in data_a}
+    periods = get_dynamic_periods(now_tr())
+    keys_to_reconcile = ["pct_1d", periods["period_30d"]["key"], "pct_3m", "pct_6m", periods["period_360d"]["key"]]
 
     for item_b in data_b:
         ticker = item_b["ticker"]
@@ -334,7 +296,7 @@ def reconcile_data(data_a: List[STOCK_MODEL], data_b: List[STOCK_MODEL]) -> List
                 all_data[ticker] = item_b
             elif ts_a == ts_b:
                 # aynı anda gelirse ortalama (basit yaklaşım)
-                for key in ["pct_1d", "pct_1m", "pct_3m", "pct_6m", "pct_1y"]:
+                for key in keys_to_reconcile:
                     va = item_a.get(key)
                     vb = item_b.get(key)
                     if va is not None and vb is not None:
@@ -344,7 +306,7 @@ def reconcile_data(data_a: List[STOCK_MODEL], data_b: List[STOCK_MODEL]) -> List
             all_data[ticker] = item_b
 
     for stock in all_data.values():
-        for key in ["pct_1d", "pct_1m", "pct_3m", "pct_6m", "pct_1y"]:
+        for key in keys_to_reconcile:
             if key not in stock or stock[key] is None:
                 stock[key] = 0.0
 
@@ -422,6 +384,7 @@ def generate_analysis(stock_data: List[STOCK_MODEL]) -> Dict[str, Any]:
     API_KEY = envs["GEMINI_API_KEY"]
     client = genai.Client(api_key=API_KEY)
 
+    # Gemini'ye sadece günlük veriyi gönderiyoruz, daha spesifik ve ucuz bir analiz için.
     top_daily = sorted(stock_data, key=lambda x: x["pct_1d"], reverse=True)[:3]
     top_daily_text = ", ".join(
         [f"{s['ticker']} ({float_to_pct_str(s['pct_1d'])})" for s in top_daily]
@@ -464,7 +427,7 @@ def generate_analysis(stock_data: List[STOCK_MODEL]) -> Dict[str, Any]:
 
 
 # -----------------------------------
-# IMAGE RENDER (güncellenmiş, 3 tablo sığdırır)
+# IMAGE RENDER (Dinamik 30/360 gün periyotlarına göre güncellendi)
 # -----------------------------------
 def load_font(size: int, bold: bool = False):
     suffix = "-Bold" if bold else ""
@@ -499,7 +462,12 @@ def render_table(
     W = CANVAS_W
     INNER_W = W - 2 * MARGIN_X
 
-    sorted_data = sorted(data, key=lambda x: x.get(sort_key, 0.0), reverse=True)[:limit]
+    # Ana sıralama anahtarını kontrol et
+    sorted_data = sorted(
+        data, 
+        key=lambda x: x.get(sort_key, 0.0), 
+        reverse=True
+    )[:limit]
 
     # 6 kolon düzeni
     COL_MAP = {
@@ -518,7 +486,10 @@ def render_table(
     # 2) Header
     x_pos = MARGIN_X
     labels = ["Hisse", "P1", "P2", "P3", "P4", "P5"]
+    
+    # header_map'i kullanarak dinamik başlıkları al
     header_labels = ["Hisse"] + [header_map.get(c, c) for c in col_order[1:]]
+    
     for key, label in zip(labels, header_labels):
         width = COL_MAP[key]
         if key == "Hisse":
@@ -531,7 +502,7 @@ def render_table(
                 anchor="lt",
             )
         else:
-            # ⬅️ Diğer başlıklar sağa hizalı kalsın
+            # ➡️ Diğer başlıklar sağa hizalı kalsın
             draw.text(
                 (x_pos + width - 4, current_y),
                 label,
@@ -577,6 +548,10 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
     W, H = CANVAS_W, CANVAS_H
     BG_COLOR = (248, 248, 252)
     FRAME_COLOR = (0, 102, 204)
+    now = now_tr()
+    periods = get_dynamic_periods(now)
+    key_30d = periods["period_30d"]["key"]
+    key_360d = periods["period_360d"]["key"]
 
     img = Image.new("RGB", (W, H), color=BG_COLOR)
     draw = ImageDraw.Draw(img)
@@ -608,19 +583,21 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
     if rows_fit < 5:
         rows_fit = 5
 
+    # DİNAMİK HEADER MAP
     HEADER_MAP = {
         "ticker": "Hisse",
         "pct_1d": "Günlük %",
-        "pct_1m": "Aylık %",
+        key_30d: periods["period_30d"]["header"],
         "pct_3m": "3 Aylık %",
         "pct_6m": "6 Aylık %",
-        "pct_1y": "Yıllık %",
+        key_360d: periods["period_360d"]["header"],
     }
 
     current_y = top_block_bottom + 16
 
-    # Tablo 1: Gün
-    col_order_1d = ["ticker", "pct_1d", "pct_1m", "pct_3m", "pct_6m", "pct_1y"]
+    # Tablo 1: Günlük Kazandıranlar
+    # Sıralama Anahtarı: pct_1d. Görüntüleme: Günlük başta, sonra 30G, 360G, 3A, 6A.
+    col_order_1d = ["ticker", "pct_1d", key_30d, key_360d, "pct_3m", "pct_6m"]
     current_y = render_table(
         draw,
         stock_data,
@@ -636,16 +613,17 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
     )
     current_y += TABLE_GAP_Y
 
-    # Tablo 2: Ay
-    col_order_1m = ["ticker", "pct_1m", "pct_1d", "pct_3m", "pct_6m", "pct_1y"]
+    # Tablo 2: Son 30 Gün Kazandıranları
+    # Sıralama Anahtarı: pct_30d. Görüntüleme: 30G başta, sonra Günlük, 360G, 3A, 6A.
+    col_order_30d = ["ticker", key_30d, "pct_1d", key_360d, "pct_3m", "pct_6m"]
     current_y = render_table(
         draw,
         stock_data,
         current_y,
-        "Ayın Kazandıranları",
-        "pct_1m",
+        periods["period_30d"]["title"], # Dinamik Başlık
+        key_30d,
         rows_fit,
-        col_order_1m,
+        col_order_30d,
         HEADER_MAP,
         table_title_font,
         table_header_font,
@@ -653,16 +631,17 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
     )
     current_y += TABLE_GAP_Y
 
-    # Tablo 3: Yıl
-    col_order_1y = ["ticker", "pct_1y", "pct_1d", "pct_1m", "pct_3m", "pct_6m"]
+    # Tablo 3: Son 360 Gün Kazandıranları
+    # Sıralama Anahtarı: pct_360d. Görüntüleme: 360G başta, sonra Günlük, 30G, 3A, 6A.
+    col_order_360d = ["ticker", key_360d, "pct_1d", key_30d, "pct_3m", "pct_6m"]
     current_y = render_table(
         draw,
         stock_data,
         current_y,
-        "Yılın Kazandıranları",
-        "pct_1y",
+        periods["period_360d"]["title"], # Dinamik Başlık
+        key_360d,
         rows_fit,
-        col_order_1y,
+        col_order_360d,
         HEADER_MAP,
         table_title_font,
         table_header_font,
@@ -670,7 +649,6 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
     )
 
     # 3) Footer — Türkçe tarih + gün adı
-    now = now_tr()
     date_line = f"{now.day:02d} {tr_month_name(now.month)} {now.year}, {tr_weekday_name(now.weekday())}"
     footer_text = f"Veri Güncel: {date_line}"
     draw.text((W // 2, H - 40), footer_text, fill=(80, 90, 100), font=foot_font, anchor="ms")
@@ -684,7 +662,7 @@ def render_image(title: str, stock_data: List[STOCK_MODEL], limit: int) -> bytes
 
 
 # -----------------------------------
-# TWEET COMPOSITION
+# TWEET COMPOSITION (DEĞİŞMEDİ)
 # -----------------------------------
 def compose_tweet(gemini_data: Dict[str, Any], stock_data: List[STOCK_MODEL]) -> str:
     analysis_title = gemini_data["analysis_title"]
@@ -741,7 +719,7 @@ def compose_tweet(gemini_data: Dict[str, Any], stock_data: List[STOCK_MODEL]) ->
 
 
 # -----------------------------------
-# X/Twitter Client
+# X/Twitter Client (DEĞİŞMEDİ)
 # -----------------------------------
 def upload_media(oauth: OAuth1Session, image_bytes: bytes) -> str:
     files = {"media": ("bist_analysis.png", image_bytes, "image/png")}
@@ -764,7 +742,7 @@ def post_tweet(oauth: OAuth1Session, text: str, media_id: str):
 
 
 # -----------------------------------
-# CLI / MAIN
+# CLI / MAIN (DEĞİŞMEDİ)
 # -----------------------------------
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="BIST Multi-Period Kazanç Analiz Botu.")
