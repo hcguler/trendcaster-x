@@ -7,6 +7,7 @@ import random
 import time
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Optional, Any, Tuple
+import traceback # Hata izleme için eklendi
 
 # Third-party libraries
 import requests
@@ -16,7 +17,7 @@ from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
 from google import genai
 
-# --- CONSTANTS & CONFIGURATION ---
+# --- UTILITIES & CONFIGURATION ---
 OWNER_HANDLE = os.environ.get("OWNER_HANDLE", "@durbirbakiyim")
 
 # API Endpoints
@@ -47,6 +48,32 @@ STOCK_MODEL = Dict[str, Any]
 PROVIDER_A_URL = "https://tr.investing.com/equities/most-active-stocks" 
 PROVIDER_B_URL = "https://www.bloomberght.com/borsa/hisseler"
 
+# --- ENV / OAUTH ---
+
+def require_env(keys: List[str]) -> dict:
+    """Gerekli ortam değişkenlerini kontrol eder ve çeker."""
+    envs = {k: os.environ.get(k) for k in keys}
+    missing = [k for k, v in envs.items() if not v]
+    if missing:
+        print(f"HATA: Eksik secret(lar): {', '.join(missing)}", file=sys.stderr)
+        sys.exit(1)
+    return envs
+
+def oauth1_session_from_env() -> OAuth1Session:
+    """X/Twitter API için OAuth1 oturumu oluşturur."""
+    envs = require_env([
+        "TWITTER_API_KEY",
+        "TWITTER_API_SECRET",
+        "TWITTER_ACCESS_TOKEN",
+        "TWITTER_ACCESS_TOKEN_SECRET",
+    ])
+    return OAuth1Session(
+        envs["TWITTER_API_KEY"],
+        client_secret=envs["TWITTER_API_SECRET"],
+        resource_owner_key=envs["TWITTER_ACCESS_TOKEN"],
+        resource_owner_secret=envs["TWITTER_ACCESS_TOKEN_SECRET"],
+    )
+
 # --- LOCALE & TIME HELPERS ---
 _TR_MONTHS = {
     1:"Ocak", 2:"Şubat", 3:"Mart", 4:"Nisan", 5:"Mayıs", 6:"Haziran",
@@ -62,6 +89,7 @@ def now_tr() -> datetime:
     return datetime.now(TR_TIMEZONE)
 
 def tr_month_name(m: int) -> str:
+    """Ay numarasını Türkçe ada çevirir."""
     return _TR_MONTHS.get(m, str(m))
 
 def tr_weekday_name(wd: int) -> str:
@@ -101,12 +129,14 @@ def fetch_provider_a() -> List[STOCK_MODEL]:
     """
     print(f"   [Provider A] Veri çekiliyor: {PROVIDER_A_URL}")
     try:
+        # Investing.com gibi siteler genellikle User-Agent ve diğer header'lara karşı hassastır.
+        # 403 hatası muhtemelen bot olarak algılanmanızdan kaynaklanıyor.
+        # Gerçek scraping kodunda bu header'ları daha iyi gizlemeniz gerekir.
         response = requests.get(PROVIDER_A_URL, headers=get_common_headers(), timeout=15)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
         # --- Gerçek Scraping Başlangıcı (Örnek Selector'lar) ---
-        # Örnek: Genellikle tablo satırlarını içeren bir selector kullanılır.
         # rows = soup.select('#top-gainers-table tbody tr') 
         # stocks = []
         # for row in rows[:20]: # İlk 20 hisseyi çek
@@ -115,7 +145,7 @@ def fetch_provider_a() -> List[STOCK_MODEL]:
         #     stocks.append(...)
         # --- Gerçek Scraping Bitişi ---
 
-        # Test için zengin Mock Veri
+        # Test için zengin Mock Veri (Debugging amaçlı kullanılabilir)
         stocks = [
             {'ticker': 'ASELS', 'name': 'Aselsan', 'pct_1d': 8.5, 'pct_1m': 12.0, 'pct_3m': 20.1, 'pct_6m': 35.0, 'pct_1y': 95.0, 'last_updated': now_tr().timestamp()},
             {'ticker': 'THYAO', 'name': 'THY', 'pct_1d': 7.2, 'pct_1m': 5.5, 'pct_3m': 10.5, 'pct_6m': 28.0, 'pct_1y': 110.0, 'last_updated': now_tr().timestamp()},
@@ -125,10 +155,12 @@ def fetch_provider_a() -> List[STOCK_MODEL]:
             {'ticker': 'BIMAS', 'name': 'Bim', 'pct_1d': 9.0, 'pct_1m': -0.5, 'pct_3m': 15.0, 'pct_6m': 30.0, 'pct_1y': 80.0, 'last_updated': now_tr().timestamp()},
         ]
         
-        print(f"   [Provider A] {len(stocks)} hisse başarıyla çekildi.")
+        print(f"   [Provider A] {len(stocks)} hisse başarıyla çekildi (Mock data).")
         return stocks
 
     except Exception as e:
+        # Investing.com'dan alınan 403 hatası, Mock data kullanılarak geçici olarak atlanabilir.
+        # Ancak bu, scraping'in çalışmadığı anlamına gelir. Hata loglanıp boş liste döndürülür.
         print(f"   [Provider A] HATA: {e}")
         return []
 
@@ -160,7 +192,7 @@ def fetch_provider_b() -> List[STOCK_MODEL]:
             {'ticker': 'TUPRS', 'name': 'Tüpraş', 'pct_1d': -2.3, 'pct_1m': 18.2, 'pct_3m': 40.0, 'pct_6m': 65.2, 'pct_1y': 150.0, 'last_updated': now_tr().timestamp()},
         ]
 
-        print(f"   [Provider B] {len(stocks)} hisse başarıyla çekildi.")
+        print(f"   [Provider B] {len(stocks)} hisse başarıyla çekildi (Mock data).")
         return stocks
 
     except Exception as e:
@@ -577,7 +609,7 @@ def parse_args() -> argparse.Namespace:
     
     # --post ve --dry-run aynı anda verilirse --dry-run kazanır
     args = parser.parse_args()
-    if args.dry_run:
+    if args.dry-run:
         args.post = False
     
     return args
