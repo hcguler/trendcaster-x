@@ -356,7 +356,7 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     )
 
     date_line = f"{now.day:02d} {tr_month_name(now.month)} {now.year}, {tr_wd_name(now.weekday())}"
-    footer_text = f"Veri Kaynağı: out/ JSON • Tarih: {date_line}"
+    footer_text = f"Tarih: {date_line}"
     draw.text((W//2, H - 40), footer_text, fill=(80,90,100), font=foot_font, anchor="ms")
     draw.rectangle([20,20, W-20, H-20], outline=FRAME, width=5)
 

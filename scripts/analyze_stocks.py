@@ -6,19 +6,115 @@ import json
 import os
 from datetime import datetime, timedelta
 
-# --- BURAYI DÜZENLEYİN ---
-# Analiz edilecek BIST hisselerinin listesi. 
-# Örnek olarak birkaç popüler hisse eklendi.
-# Yahoo Finance formatına uygun olarak sonuna ".IS" eklenmelidir.
-# Tam listeyi bir kaynaktan alıp buraya ekleyebilirsiniz.
-BIST_TICKERS = [
-    "AKBNK.IS", "ARCLK.IS", "ASELS.IS", "BIMAS.IS", "EKGYO.IS", 
+# --- BIST TICKER LISTESI (Dinamik) ---
+
+import os, re, glob, json
+
+# Yedek (fallback) kısa liste: kaynak dosyalar bulunmazsa devreye girer
+_FALLBACK_TICKERS = [
+    "AKBNK.IS", "ARCLK.IS", "ASELS.IS", "BIMAS.IS", "EKGYO.IS",
     "EREGL.IS", "FROTO.IS", "GARAN.IS", "GUBRF.IS", "HEKTS.IS",
     "KCHOL.IS", "KOZAL.IS", "KRDMD.IS", "PETKM.IS", "PGSUS.IS",
     "SAHOL.IS", "SASA.IS", "SISE.IS", "TCELL.IS", "THYAO.IS",
     "TOASO.IS", "TTKOM.IS", "TUPRS.IS", "ULKER.IS", "VESTL.IS",
     "YKBNK.IS"
 ]
+
+def _ensure_is_suffix(sym: str) -> str:
+    """Sembole .IS ekler (yoksa)."""
+    if not sym: return sym
+    s = sym.strip().upper()
+    return s if s.endswith(".IS") else (s + ".IS")
+
+def _is_equity_symbol(sym: str) -> bool:
+    """
+    Sadece 'hisse' gibi görünen sembolleri kabul et.
+    Varant/temettü/bedelli benzeri uzantıları (örn: .W, .R, sonu rakamlı yapılar) ele.
+    Basit ve güvenli filtre: 3-5 harf + '.IS'
+    """
+    return bool(re.fullmatch(r"[A-Z]{3,5}\.IS", sym or ""))
+
+def _load_from_file_list(path: str = "data/bist_all_tickers.txt"):
+    """
+    Her satırda 1 sembol olacak şekilde bir dosya kullan (ör. AKBNK veya AKBNK.IS).
+    Varsa bunu öncelikli kaynak olarak kullanırız.
+    """
+    if not os.path.exists(path):
+        return []
+    out = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            sym = line.strip()
+            if not sym: 
+                continue
+            sym = _ensure_is_suffix(sym)
+            if _is_equity_symbol(sym):
+                out.append(sym)
+    return out
+
+def _find_latest_out_json(out_dir: str = "out") -> str | None:
+    """out/ altında en yeni JSON'u bul (ör. out/bist_analiz_YYYY-MM-DD.json)."""
+    files = glob.glob(os.path.join(out_dir, "*.json"))
+    if not files:
+        return None
+    # Dosya adına gömülü tarih varsa ona göre, yoksa mtime'a göre sırala
+    def key_fn(p):
+        m = re.search(r"(\d{4}-\d{2}-\d{2})", os.path.basename(p))
+        if m:
+            try:
+                return datetime.fromisoformat(m.group(1))
+            except Exception:
+                pass
+        return datetime.fromtimestamp(os.path.getmtime(p))
+    files.sort(key=key_fn, reverse=True)
+    return files[0]
+
+def _load_from_out_json():
+    """
+    Elindeki analiz JSON'undaki anahtarlardan liste üret.
+    Beklenen şema: { "AKBNK.IS": {...}, "ARCLK.IS": {...}, ... }
+    """
+    path = _find_latest_out_json()
+    if not path:
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        if not isinstance(payload, dict):
+            return []
+        syms = []
+        for k in payload.keys():
+            sym = _ensure_is_suffix(str(k))
+            if _is_equity_symbol(sym):
+                syms.append(sym)
+        return syms
+    except Exception:
+        return []
+
+def load_all_bist_tickers() -> list[str]:
+    """
+    Öncelik:
+      1) data/bist_all_tickers.txt (tam listeyi buraya koyarsın)
+      2) out/ içindeki en güncel analiz JSON'undan anahtarlar
+      3) _FALLBACK_TICKERS (kısa, sabit liste)
+    """
+    # 1) Dış dosya
+    from_file = _load_from_file_list()
+    if from_file:
+        # Benzersiz ve sıralı hali
+        return sorted(set(from_file))
+
+    # 2) out JSON
+    from_out = _load_from_out_json()
+    if from_out:
+        return sorted(set(from_out))
+
+    # 3) Yedek
+    return sorted(set(_FALLBACK_TICKERS))
+
+# Dışarıda kullanacağın değişken:
+BIST_TICKERS = load_all_bist_tickers()
+
 
 def get_closest_price(data_frame, date):
     """Belirtilen tarihe en yakın geçmişteki kapanış fiyatını bulur."""
