@@ -4,14 +4,15 @@ import yfinance as yf
 import pandas as pd
 import json
 import os
+import re
 from datetime import datetime, timedelta
 
-# --- BIST TICKER LISTESI (Dinamik) ---
+# =========================
+# TUM BIST LISTESI — DINAMIK
+# =========================
 
-import os, re, glob, json
-
-# Yedek (fallback) kısa liste: kaynak dosyalar bulunmazsa devreye girer
-_FALLBACK_TICKERS = [
+FALLBACK_TICKERS = [
+    # Yedek kısa liste (kaynak bulunamazsa)
     "AKBNK.IS", "ARCLK.IS", "ASELS.IS", "BIMAS.IS", "EKGYO.IS",
     "EREGL.IS", "FROTO.IS", "GARAN.IS", "GUBRF.IS", "HEKTS.IS",
     "KCHOL.IS", "KOZAL.IS", "KRDMD.IS", "PETKM.IS", "PGSUS.IS",
@@ -21,174 +22,174 @@ _FALLBACK_TICKERS = [
 ]
 
 def _ensure_is_suffix(sym: str) -> str:
-    """Sembole .IS ekler (yoksa)."""
-    if not sym: return sym
-    s = sym.strip().upper()
+    if not sym:
+        return sym
+    s = str(sym).strip().upper()
     return s if s.endswith(".IS") else (s + ".IS")
 
 def _is_equity_symbol(sym: str) -> bool:
-    """
-    Sadece 'hisse' gibi görünen sembolleri kabul et.
-    Varant/temettü/bedelli benzeri uzantıları (örn: .W, .R, sonu rakamlı yapılar) ele.
-    Basit ve güvenli filtre: 3-5 harf + '.IS'
-    """
+    # 3–5 harf + ".IS" — varant/kupon benzerlerini ele
     return bool(re.fullmatch(r"[A-Z]{3,5}\.IS", sym or ""))
 
-def _load_from_file_list(path: str = "data/bist_all_tickers.txt"):
-    """
-    Her satırda 1 sembol olacak şekilde bir dosya kullan (ör. AKBNK veya AKBNK.IS).
-    Varsa bunu öncelikli kaynak olarak kullanırız.
-    """
+def _load_from_file(path: str = "data/bist_all_tickers.txt") -> list[str]:
     if not os.path.exists(path):
         return []
     out = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
-            sym = line.strip()
-            if not sym: 
+            code = line.strip()
+            if not code:
                 continue
-            sym = _ensure_is_suffix(sym)
+            sym = _ensure_is_suffix(code)
             if _is_equity_symbol(sym):
                 out.append(sym)
-    return out
+    return sorted(set(out))
 
-def _find_latest_out_json(out_dir: str = "out") -> str | None:
-    """out/ altında en yeni JSON'u bul (ör. out/bist_analiz_YYYY-MM-DD.json)."""
-    files = glob.glob(os.path.join(out_dir, "*.json"))
-    if not files:
-        return None
-    # Dosya adına gömülü tarih varsa ona göre, yoksa mtime'a göre sırala
-    def key_fn(p):
-        m = re.search(r"(\d{4}-\d{2}-\d{2})", os.path.basename(p))
-        if m:
-            try:
-                return datetime.fromisoformat(m.group(1))
-            except Exception:
-                pass
-        return datetime.fromtimestamp(os.path.getmtime(p))
-    files.sort(key=key_fn, reverse=True)
-    return files[0]
-
-def _load_from_out_json():
+def _load_from_url(url: str) -> list[str]:
     """
-    Elindeki analiz JSON'undaki anahtarlardan liste üret.
-    Beklenen şema: { "AKBNK.IS": {...}, "ARCLK.IS": {...}, ... }
+    BIST sembollerini bir HTML tablo sayfasından çekmeye çalışır.
+    Ortam değişkeni: BIST_TICKERS_URL
+    - Sayfadaki tüm tabloları tarar ve 'Ticker', 'Kod', 'Symbol' benzeri sütun adlarını dener.
+    - Başarısız olursa boş liste döner (kırılmaz).
     """
-    path = _find_latest_out_json()
-    if not path:
-        return []
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            payload = json.load(f)
-        if not isinstance(payload, dict):
-            return []
-        syms = []
-        for k in payload.keys():
-            sym = _ensure_is_suffix(str(k))
-            if _is_equity_symbol(sym):
-                syms.append(sym)
-        return syms
+        dfs = pd.read_html(url)
     except Exception:
         return []
+    candidates = []
+    possible_cols = {"ticker", "kod", "symbol", "code", "sembol"}
+    for df in dfs:
+        cols_lower = [str(c).strip().lower() for c in df.columns]
+        for i, c in enumerate(cols_lower):
+            if c in possible_cols:
+                for val in df.iloc[:, i].dropna().astype(str).tolist():
+                    candidates.append(val.strip())
+    # normalize + filtre
+    norm = [_ensure_is_suffix(x) for x in candidates]
+    norm = [x for x in norm if _is_equity_symbol(x)]
+    return sorted(set(norm))
 
 def load_all_bist_tickers() -> list[str]:
     """
     Öncelik:
-      1) data/bist_all_tickers.txt (tam listeyi buraya koyarsın)
-      2) out/ içindeki en güncel analiz JSON'undan anahtarlar
-      3) _FALLBACK_TICKERS (kısa, sabit liste)
+    1) data/bist_all_tickers.txt
+    2) BIST_TICKERS_URL ortam değişkeni (pandas.read_html ile)
+    3) FALLBACK_TICKERS
     """
-    # 1) Dış dosya
-    from_file = _load_from_file_list()
+    from_file = _load_from_file()
     if from_file:
-        # Benzersiz ve sıralı hali
-        return sorted(set(from_file))
+        return from_file
 
-    # 2) out JSON
-    from_out = _load_from_out_json()
-    if from_out:
-        return sorted(set(from_out))
+    url = os.environ.get("BIST_TICKERS_URL")
+    if url:
+        from_url = _load_from_url(url)
+        if from_url:
+            return from_url
 
-    # 3) Yedek
-    return sorted(set(_FALLBACK_TICKERS))
+    return sorted(set(FALLBACK_TICKERS))
 
-# Dışarıda kullanacağın değişken:
+# --- BURAYI DÜZENLEDİK: Artik dinamik ---
 BIST_TICKERS = load_all_bist_tickers()
 
 
-def get_closest_price(data_frame, date):
+# =========================
+# YARDIMCI FONKSIYONLAR
+# =========================
+
+def get_closest_price(data_frame: pd.DataFrame, date: datetime):
     """Belirtilen tarihe en yakın geçmişteki kapanış fiyatını bulur."""
     try:
-        # Tarihe göre doğrudan arama yap
+        # yfinance tarih index'i genellikle naive YYYY-MM-DD ile uyumlu çalışır
         return data_frame.loc[date.strftime('%Y-%m-%d')]['Close']
     except KeyError:
-        # Eğer tam o gün veri yoksa (hafta sonu, tatil vb.), bir önceki mevcut güne bak
-        past_dates = data_frame.loc[:date.strftime('%Y-%m-%d')]
-        if not past_dates.empty:
-            return past_dates.iloc[-1]['Close']
+        past = data_frame.loc[:date.strftime('%Y-%m-%d')]
+        if not past.empty:
+            return past.iloc[-1]['Close']
         return None
 
+def _pct_change(cur: float | None, past: float | None) -> float:
+    """
+    Yüzde değişim: ((cur - past) / past) * 100
+    - past None/0 ise 0 döndür.
+    - cur None ise 0 döndür.
+    """
+    try:
+        if cur is None or past in (None, 0):
+            return 0.0
+        return float((cur - past) / past) * 100.0
+    except Exception:
+        return 0.0
+
+def _fmt_pct(x: float | None) -> str:
+    try:
+        return f"{float(x or 0):.2f}%"
+    except Exception:
+        return "0.00%"
+
+# =========================
+# ANALIZ
+# =========================
+
 def analyze_stocks():
-    """Hisseleri analiz eder ve verileri bir sözlük olarak döndürür."""
+    """Hisseleri analiz eder ve verileri bir dict olarak döndürür."""
     today = datetime.now()
     analysis_results = {}
 
-    # Geçmiş verileri çekmek için başlangıç tarihini belirle (1 yıl yeterli)
+    # Son 1 yıldan biraz fazla tampon (iş günü/kapalı gün kaymaları için)
     start_date = today - timedelta(days=366)
 
     for ticker in BIST_TICKERS:
         print(f"'{ticker}' için veriler işleniyor...")
         try:
             stock = yf.Ticker(ticker)
+            hist = stock.history(
+                start=start_date.strftime('%Y-%m-%d'),
+                end=today.strftime('%Y-%m-%d')
+            )
 
-            # Son 1 yıllık tarihsel veriyi al
-            hist_data = stock.history(start=start_date.strftime('%Y-%m-%d'), end=today.strftime('%Y-%m-%d'))
-            
-            if hist_data.empty:
+            if hist.empty:
                 print(f"'{ticker}' için geçmiş veri bulunamadı.")
+                analysis_results[ticker] = {"hata": "no_history"}
                 continue
 
-            # Güncel günün verisini al (açılış ve kapanış)
-            # Piyasa kapandıktan sonra çalışacağı için son günün verisi mevcut olacaktır.
-            today_data = hist_data.iloc[-1]
-            open_price_today = today_data['Open']
-            close_price_today = today_data['Close']
-            
-            # Geçmiş tarihleri hesapla
-            date_30_days_ago = today - timedelta(days=30)
-            date_90_days_ago = today - timedelta(days=90)
-            date_180_days_ago = today - timedelta(days=180)
-            date_360_days_ago = today - timedelta(days=360)
+            # Son gün (kapanıştan sonra çalıştığını varsayıyoruz)
+            today_row = hist.iloc[-1]
+            open_today  = float(today_row.get('Open', 0) or 0)
+            close_today = float(today_row.get('Close', 0) or 0)
 
-            # Geçmiş kapanış fiyatlarını al
-            close_30_days_ago = get_closest_price(hist_data, date_30_days_ago)
-            close_90_days_ago = get_closest_price(hist_data, date_90_days_ago)
-            close_180_days_ago = get_closest_price(hist_data, date_180_days_ago)
-            close_360_days_ago = get_closest_price(hist_data, date_360_days_ago)
+            # Geçmiş referans tarihleri
+            d30  = today - timedelta(days=30)
+            d90  = today - timedelta(days=90)
+            d180 = today - timedelta(days=180)
+            d360 = today - timedelta(days=360)
 
-            # Kazandırma oranlarını hesapla
-            # Hata vermemesi için değerlerin None olup olmadığını kontrol et
-            daily_return = ((close_price_today - open_price_today) / open_price_today) * 100 if open_price_today else 0
-            monthly_return = ((close_price_today - close_30_days_ago) / close_30_days_ago) * 100 if close_30_days_ago else None
-            quarterly_return = ((close_price_today - close_90_days_ago) / close_90_days_ago) * 100 if close_90_days_ago else None
-            half_yearly_return = ((close_price_today - close_180_days_ago) / close_180_days_ago) * 100 if close_180_days_ago else None
-            yearly_return = ((close_price_today - close_360_days_ago) / close_360_days_ago) * 100 if close_360_days_ago else None
+            c30  = get_closest_price(hist, d30)
+            c90  = get_closest_price(hist, d90)
+            c180 = get_closest_price(hist, d180)
+            c360 = get_closest_price(hist, d360)
+
+            # Yüzdeler — verisi yoksa 0
+            daily_ret   = _pct_change(close_today, open_today)    # open_today yoksa 0
+            monthly_ret = _pct_change(close_today, c30)
+            q90_ret     = _pct_change(close_today, c90)
+            h180_ret    = _pct_change(close_today, c180)
+            y360_ret    = _pct_change(close_today, c360)
 
             analysis_results[ticker] = {
-                "bugun_acilis": open_price_today,
-                "bugun_kapanis": close_price_today,
+                "bugun_acilis": open_today,
+                "bugun_kapanis": close_today,
                 "gecmis_kapanis_fiyatlari": {
-                    "30_gun_once": close_30_days_ago,
-                    "90_gun_once": close_90_days_ago,
-                    "180_gun_once": close_180_days_ago,
-                    "360_gun_once": close_360_days_ago,
+                    "30_gun_once": float(c30 or 0),
+                    "90_gun_once": float(c90 or 0),
+                    "180_gun_once": float(c180 or 0),
+                    "360_gun_once": float(c360 or 0),
                 },
                 "kazandirma_oranlari_yuzde": {
-                    "gunluk": f"{daily_return:.2f}%",
-                    "aylik_30_gun": f"{monthly_return:.2f}%" if monthly_return is not None else "N/A",
-                    "3_aylik_90_gun": f"{quarterly_return:.2f}%" if quarterly_return is not None else "N/A",
-                    "6_aylik_180_gun": f"{half_yearly_return:.2f}%" if half_yearly_return is not None else "N/A",
-                    "12_aylik_360_gun": f"{yearly_return:.2f}%" if yearly_return is not None else "N/A",
+                    "gunluk": _fmt_pct(daily_ret),
+                    "aylik_30_gun": _fmt_pct(monthly_ret),   # yoksa 0.00%
+                    "3_aylik_90_gun": _fmt_pct(q90_ret),     # yoksa 0.00%
+                    "6_aylik_180_gun": _fmt_pct(h180_ret),   # yoksa 0.00%
+                    "12_aylik_360_gun": _fmt_pct(y360_ret),  # yoksa 0.00%
                 }
             }
 
@@ -198,23 +199,27 @@ def analyze_stocks():
 
     return analysis_results
 
+# =========================
+# KAYIT
+# =========================
+
 def save_to_json(data):
     """Veriyi JSON dosyasına kaydeder."""
-    # Çıktı dizininin var olduğundan emin ol
     output_dir = 'out'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    # Dosya adını tarihle birlikte oluştur
     today_str = datetime.now().strftime('%Y-%m-%d')
     file_path = os.path.join(output_dir, f'bist_analiz_{today_str}.json')
 
-    # JSON dosyasına yaz
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
     print(f"Analiz sonuçları başarıyla '{file_path}' dosyasına kaydedildi.")
 
+# =========================
+# MAIN
+# =========================
 
 if __name__ == "__main__":
     results = analyze_stocks()
