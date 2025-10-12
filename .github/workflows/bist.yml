@@ -3,7 +3,8 @@
 name: Gunluk BIST Analizi
 
 on:
-  schedule:
+  schedule:   
+   # Hafta içi 18:30 (Europe/Istanbul, UTC+3) => 16:00 UTC
     - cron: '30 15 * * *'
   workflow_dispatch:
 

@@ -11,15 +11,56 @@ from datetime import datetime, timedelta
 # TUM BIST LISTESI — DINAMIK
 # =========================
 
-FALLBACK_TICKERS = [
-    # Yedek kısa liste (kaynak bulunamazsa)
-    "AKBNK.IS", "ARCLK.IS", "ASELS.IS", "BIMAS.IS", "EKGYO.IS",
-    "EREGL.IS", "FROTO.IS", "GARAN.IS", "GUBRF.IS", "HEKTS.IS",
-    "KCHOL.IS", "KOZAL.IS", "KRDMD.IS", "PETKM.IS", "PGSUS.IS",
-    "SAHOL.IS", "SASA.IS", "SISE.IS", "TCELL.IS", "THYAO.IS",
-    "TOASO.IS", "TTKOM.IS", "TUPRS.IS", "ULKER.IS", "VESTL.IS",
-    "YKBNK.IS"
+BIST_ALL_TICKERS_OVER_ONE_YEAR_EXPANDED = [
+    # Bankalar
+    "AKBNK.IS", "GARAN.IS", "YKBNK.IS", "ISCTR.IS", "HALKB.IS", 
+    "VAKBN.IS", "TSKB.IS", "SKBNK.IS", "ALBRK.IS", "KLNMA.IS",
+
+    # Holdingler
+    "KCHOL.IS", "SAHOL.IS", "BIMAS.IS", "ENKAI.IS", "TAVHL.IS",
+    "ALARK.IS", "DOAS.IS", "AGHOL.IS", "ULKER.IS", "TKFEN.IS",
+    "MGROS.IS", "GOZDE.IS", "AEFES.IS", "GLYHO.IS", "IHLAS.IS",
+
+    # Sanayi ve Üretim
+    "EREGL.IS", "TUPRS.IS", "FROTO.IS", "TOASO.IS", "ARCLK.IS",
+    "VESTL.IS", "SASA.IS", "HEKTS.IS", "PETKM.IS", "SISE.IS",
+    "KRDMD.IS", "GUBRF.IS", "KORDS.IS", "TTRAK.IS", "OTKAR.IS",
+    "AYGAZ.IS", "KMPUR.IS", "DEVA.IS", "ECILC.IS", "EGEEN.IS",
+    "JANTS.IS", "KARTN.IS", "KONTR.IS", "SMRTG.IS", "ARZUM.IS", # ARZUM eklendi
+    "ARTMS.IS", # ARTMS eklendi
+    
+    # Ulaştırma ve Lojistik
+    "THYAO.IS", "PGSUS.IS", "MPARK.IS", "ULUSN.IS",
+
+    # Teknoloji ve İletişim
+    "TCELL.IS", "TTKOM.IS", "ASELS.IS", "LOGO.IS", "KAREL.IS",
+    "ARDYZ.IS", "INDES.IS", 
+    
+    # Enerji
+    "AKSEN.IS", "AYDEM.IS", "ZOREN.IS", "ENERY.IS", "ODAS.IS",
+    "GWIND.IS", "BIOEN.IS", "AYEN.IS", "AKSUE.IS",
+    
+    # Sağlık
+    "ONCSM.IS", 
+    
+    # Gayrimenkul Yatırım Ortaklıkları (GYO)
+    "EKGYO.IS", "ISGYO.IS", "TRGYO.IS", "AKFGY.IS", "HLGYO.IS",
+    
+    # Çimento ve Toprak Ürünleri
+    "AKCNS.IS", "CIMSA.IS", "OYAKC.IS", "BUCIM.IS", "AFYON.IS",
+    "YBTAS.IS", 
+    
+    # Sigorta
+    "AKGRT.IS", "ANHYT.IS", "AGESA.IS", "TURSG.IS",
+    
+    # Aracı Kurumlar ve Yatırım
+    "TERA.IS", 
+    
+    # Diğer (Maden, Perakende vb.)
+    "KOZAL.IS", "IPEKE.IS", "KOZAA.IS", "DOHOL.IS", "SOKM.IS"
 ]
+
+
 
 def _ensure_is_suffix(sym: str) -> str:
     if not sym:
