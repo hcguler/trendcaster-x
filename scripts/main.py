@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 BIST Analiz Botu — OUT/ JSON'dan Görsel + (Opsiyonel) Tweet
-- Kaynak: out/bist_analiz_YYYY-MM-DD.json (veya en yeni out/*.json)
-- 1280x1280 görselde 3 tablo (Gün/30 Gün/360 Gün)
+- Kaynak: out/*.json (senin "bist_analiz_YYYY-MM-DD.json" şeman)
+- 1280x1280 görselde 3 tablo (Günlük / Aylık / Yıllık)
 - Tweet için GEMINI YOK: 20 hazır şablondan rastgele seç, dinamik Hisse + % yerleştir
 CLI:
-  python scripts/main.py --dry-run --limit 6 --out /tmp/bist.png
+  python scripts/main.py --dry-run --out /tmp/bist.png
   python scripts/main.py --post
   python scripts/main.py --post --json out/bist_analiz_2025-10-12.json
 """
@@ -61,12 +61,6 @@ def now_tr() -> datetime:
 def tr_month_name(m: int) -> str: return _TR_MONTHS.get(m, str(m))
 def tr_wd_name(w: int) -> str: return _TR_WD.get(w, "")
 
-def get_dynamic_periods(now: datetime) -> Dict[str, Any]:
-    return {
-        "period_30d": {"key": "pct_30d", "title": f"Son 30 Gün ({(now - timedelta(days=30)).strftime('%d.%m')}-Bugün)", "header": "30 Gün %"},
-        "period_360d": {"key": "pct_360d", "title": f"Son 360 Gün ({(now - timedelta(days=360)).strftime('%d.%m.%Y')}-Bugün)", "header": "360 Gün %"},
-    }
-
 def float_to_pct_str(v: float, decimals: int=2) -> str:
     if v is None: return "—"
     sign = "+" if v >= 0 else ""
@@ -90,12 +84,13 @@ def oauth1_session_from_env() -> OAuth1Session:
     )
 
 def hashtag_from_ticker(sym: str) -> str:
-    # Twitter hashtagleri '.' gibi karakterleri bölüyor; #AKBNK.IS -> #AKBNK olsun
-    core = sym.split(".")[0]
-    return f"#{core}"
+    return f"#{sym.split('.')[0]}"
+
+def display_ticker(sym: str) -> str:
+    return sym.split(".")[0] if sym else sym
 
 # -------------------------
-# OUT/ JSON OKU & DÖNÜŞTÜR (Yeni Şema)
+# OUT/ JSON OKU & DÖNÜŞTÜR (bist_analiz_* şeması)
 # -------------------------
 STOCK = Dict[str, Any]
 
@@ -103,7 +98,6 @@ def find_latest_json(out_dir: str="out") -> Optional[str]:
     files = glob.glob(os.path.join(out_dir, "*.json"))
     if not files: return None
     def key_fn(p):
-        # Önce ad içinde tarih varsa ona göre sırala, yoksa mtime
         m = re.search(r"(\d{4}-\d{2}-\d{2})", os.path.basename(p))
         if m:
             try: return datetime.fromisoformat(m.group(1))
@@ -131,11 +125,8 @@ def load_out_json(path: Optional[str]=None) -> Dict[str, Any]:
             raise FileNotFoundError("out/ altında JSON bulunamadı.")
     with open(path, "r", encoding="utf-8") as f:
         payload = json.load(f)
-
-    # Beklenen yeni şema: { "AKBNK.IS": { "kazandirma_oranlari_yuzde": { "gunluk": "0.00%", ... } }, ... }
     if not isinstance(payload, dict):
         raise ValueError("JSON beklenen şemada değil (dict olmalı).")
-
     return {"_path": path, "data": payload}
 
 def transform_payload_to_stocks(payload: Dict[str, Any]) -> List[STOCK]:
@@ -145,7 +136,6 @@ def transform_payload_to_stocks(payload: Dict[str, Any]) -> List[STOCK]:
 
     for sym, row in raw.items():
         perf = (row or {}).get("kazandirma_oranlari_yuzde", {}) or {}
-
         out.append({
             "ticker": sym,
             "name": sym,
@@ -161,7 +151,6 @@ def transform_payload_to_stocks(payload: Dict[str, Any]) -> List[STOCK]:
 
 # -------------------------
 # ŞABLONLAR (20 farklı)
-# {TOP1}, {TOP1_PCT}, {TOP2}, {TOP2_PCT}, {TOP3}, {TOP3_PCT}, {COUNT}
 # -------------------------
 TEMPLATES = [
     "🚨 Günün yıldızı: {TOP1} ({TOP1_PCT}). İlk üç: {TOP1}, {TOP2}, {TOP3}. Yarın ivme sürer mi?",
@@ -190,7 +179,7 @@ def build_context(stocks: List[STOCK]) -> Dict[str, Any]:
     top = sorted([s for s in stocks if s.get("pct_1d") is not None], key=lambda x: x["pct_1d"], reverse=True)[:3]
     if not top:
         return {"COUNT": len(stocks), "TOP1": "-", "TOP1_PCT": "-", "TOP2": "-", "TOP2_PCT": "-", "TOP3": "-", "TOP3_PCT": "-"}
-    def sym(i): return top[i]["ticker"] if i < len(top) else "-"
+    def sym(i): return display_ticker(top[i]["ticker"]) if i < len(top) else "-"
     def pct(i): return float_to_pct_str(top[i]["pct_1d"]) if i < len(top) else "-"
     return {
         "COUNT": len(stocks),
@@ -248,8 +237,13 @@ def render_table(draw: ImageDraw.ImageDraw, data: List[STOCK], start_y: int, tab
                  title_font, header_font, data_font) -> int:
     W = CANVAS_W
     INNER_W = W - 2*MARGIN_X
-    # None'lar sona
-    sorted_data = sorted(data, key=lambda x: (x.get(sort_key) is not None, x.get(sort_key) if x.get(sort_key) is not None else -1e9), reverse=True)[:limit]
+    # İlgili döneme göre en çok kazandıran ilk 5 (None'lar sona)
+    sorted_data = sorted(
+        data,
+        key=lambda x: (x.get(sort_key) is not None, x.get(sort_key) if x.get(sort_key) is not None else -1e9),
+        reverse=True
+    )[:5]  # her zaman 5
+
     COL_MAP = {"Hisse": 0.18*INNER_W, "P1": 0.164*INNER_W, "P2": 0.164*INNER_W, "P3": 0.164*INNER_W, "P4": 0.164*INNER_W, "P5": 0.164*INNER_W}
 
     draw.text((MARGIN_X, start_y), table_title, fill=(50,50,50), font=title_font)
@@ -273,7 +267,8 @@ def render_table(draw: ImageDraw.ImageDraw, data: List[STOCK], start_y: int, tab
     for i, s in enumerate(sorted_data):
         x = MARGIN_X
         row_y = current_y + i*ROW_H
-        draw.text((x, row_y), s["ticker"], fill=(20,20,20), font=data_font)
+        # .IS'siz göster
+        draw.text((x, row_y), display_ticker(s["ticker"]), fill=(20,20,20), font=data_font)
         x += COL_MAP["Hisse"]
         for data_key, col in zip(col_order[1:], ["P1","P2","P3","P4","P5"]):
             w = COL_MAP[col]
@@ -294,9 +289,14 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     BG = (248,248,252)
     FRAME = (0,102,204)
     now = now_tr()
-    periods = get_dynamic_periods(now)
-    key_30d = periods["period_30d"]["key"]
-    key_360d = periods["period_360d"]["key"]
+
+    # Kolon sabitleri: tüm tablolarda aynı sıra
+    # "Günlük, Aylık, 3 Ay, 6 Ay, Yıllık"
+    key_1d = "pct_1d"
+    key_30d = "pct_30d"
+    key_3m = "pct_3m"
+    key_6m = "pct_6m"
+    key_360d = "pct_360d"
 
     img = Image.new("RGB", (W,H), color=BG)
     draw = ImageDraw.Draw(img)
@@ -315,40 +315,45 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     draw.line([MARGIN_X, line_y, W - MARGIN_X, line_y], fill=FRAME, width=2)
 
     top_block_bottom = line_y + 12
-    bottom_reserved = FOOTER_H + 20
-    total_table_space = H - top_block_bottom - bottom_reserved
-    per_table_fixed = TABLE_TITLE_H + (HEADER_H - 28) + 4 + 12
-    space_for_rows = max(0, total_table_space - 2*TABLE_GAP_Y - 3*per_table_fixed)
-    # Satır sayısını sınırlı tut
-    rows_fit = max(5, min(limit, int(space_for_rows // (1*ROW_H))))
-    if rows_fit < 5: rows_fit = 5
+    current_y = top_block_bottom + 16
 
     HEADER_MAP = {
         "ticker": "Hisse",
-        "pct_1d": "Günlük %",
-        key_30d: periods["period_30d"]["header"],
-        "pct_3m": "3 Aylık %",
-        "pct_6m": "6 Aylık %",
-        key_360d: periods["period_360d"]["header"],
+        key_1d:  "Günlük %",
+        key_30d: "Aylık %",
+        key_3m:  "3 Ay %",
+        key_6m:  "6 Ay %",
+        key_360d:"Yıllık %",
     }
 
-    current_y = top_block_bottom + 16
-    col_order_1d = ["ticker","pct_1d",key_30d,key_360d,"pct_3m","pct_6m"]
-    current_y = render_table(draw, stock_data, current_y, "Günün Kazandıranları",
-                             "pct_1d", rows_fit, col_order_1d, HEADER_MAP,
-                             table_title_font, table_header_font, table_data_font)
+    # Tüm tablolarda kolon sırası sabit:
+    col_order_common = ["ticker", key_1d, key_30d, key_3m, key_6m, key_360d]
+
+    # 1) GÜNLÜK – en çok kazandıran 5
+    current_y = render_table(
+        draw, stock_data, current_y,
+        "GÜNLÜK: En Çok Kazandıranlar",
+        key_1d, 5, col_order_common, HEADER_MAP,
+        table_title_font, table_header_font, table_data_font
+    )
     current_y += TABLE_GAP_Y
 
-    col_order_30d = ["ticker",key_30d,"pct_1d",key_360d,"pct_3m","pct_6m"]
-    current_y = render_table(draw, stock_data, current_y, periods["period_30d"]["title"],
-                             key_30d, rows_fit, col_order_30d, HEADER_MAP,
-                             table_title_font, table_header_font, table_data_font)
+    # 2) AYLIK – en çok kazandıran 5
+    current_y = render_table(
+        draw, stock_data, current_y,
+        "AYLIK: En Çok Kazandıranlar",
+        key_30d, 5, col_order_common, HEADER_MAP,
+        table_title_font, table_header_font, table_data_font
+    )
     current_y += TABLE_GAP_Y
 
-    col_order_360d = ["ticker",key_360d,"pct_1d",key_30d,"pct_3m","pct_6m"]
-    current_y = render_table(draw, stock_data, current_y, periods["period_360d"]["title"],
-                             key_360d, rows_fit, col_order_360d, HEADER_MAP,
-                             table_title_font, table_header_font, table_data_font)
+    # 3) YILLIK – en çok kazandıran 5
+    current_y = render_table(
+        draw, stock_data, current_y,
+        "YILLIK: En Çok Kazandıranlar",
+        key_360d, 5, col_order_common, HEADER_MAP,
+        table_title_font, table_header_font, table_data_font
+    )
 
     date_line = f"{now.day:02d} {tr_month_name(now.month)} {now.year}, {tr_wd_name(now.weekday())}"
     footer_text = f"Veri Kaynağı: out/ JSON • Tarih: {date_line}"
@@ -387,7 +392,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--post", action="store_true", help="Tweet at (X/Twitter).")
     p.add_argument("--dry-run", action="store_true", help="Post atma; görseli dosyaya kaydet ve metni konsola yaz.")
     p.add_argument("--json", type=str, default=None, help="Kullanılacak JSON yolu. Verilmezse out/ içindeki en yenisi.")
-    p.add_argument("--limit", type=int, default=6, help="Her tablo için maksimum satır.")
+    p.add_argument("--limit", type=int, default=5, help="Her tablo için maksimum satır (sabit: 5).")
     p.add_argument("--out", type=str, default="bist_output.png", help="--dry-run çıktısı.")
     p.add_argument("--seed", type=int, default=None, help="Rastgele seçim için seed (tekrarlanabilirlik).")
     args = p.parse_args()
