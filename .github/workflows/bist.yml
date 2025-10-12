@@ -1,47 +1,43 @@
-name: BIST Returns Daily
+# .github/workflows/main.yml
+
+name: Gunluk BIST Analizi
 
 on:
   schedule:
-    # Europe/Istanbul (UTC+3) 18:30 == 15:30 UTC
-    - cron: "30 15 * * 1-5"
+    - cron: '30 15 * * *'
   workflow_dispatch:
 
 jobs:
-  build-and-run:
+  build-and-commit:
     runs-on: ubuntu-latest
-    env:
-      TZ: Europe/Istanbul
-      PYTHONUNBUFFERED: "1"
+
+    # --- BU SATIRLARI EKLEYİN ---
+    permissions:
+      contents: write
+    # -------------------------
+
     steps:
-      - name: Checkout
+      - name: Depoyu Kopyala
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Python Ortamını Kur
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Gerekli Kütüphaneleri Yükle
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements_bist.txt; fi
+          pip install -r requirements.txt
 
-      - name: Run collector
-        run: |
-          python scripts/bist_returns.py
+      - name: Python Betiğini Çalıştır
+        run: python scripts/analyze_stocks.py
 
-      - name: Commit & push if changed
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add out/
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: update BIST returns JSON [skip ci]"
-            git push
-          else
-            echo "No changes to commit."
-          fi
+      - name: Değişiklikleri Depoya Geri Yükle (Commit)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Otomatik BIST analizi sonuçları eklendi"
+          file_pattern: 'out/*.json'
+          commit_user_name: "GitHub Actions Bot"
+          commit_user_email: "actions@github.com"
+          commit_author: "GitHub Actions Bot <actions@github.com>"
