@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 BIST Analiz Botu — OUT/ JSON'dan Görsel + (Opsiyonel) Tweet
-- Kaynak: out/bist_returns_YYYY-MM-DD.json (daha önce oluşturulmuş)
+- Kaynak: out/bist_analiz_YYYY-MM-DD.json (veya en yeni out/*.json)
 - 1280x1280 görselde 3 tablo (Gün/30 Gün/360 Gün)
 - Tweet için GEMINI YOK: 20 hazır şablondan rastgele seç, dinamik Hisse + % yerleştir
 CLI:
-  python main.py --dry-run --limit 6 --out /tmp/bist.png
-  python main.py --post
-  python main.py --post --json out/bist_returns_2025-10-12.json
+  python scripts/main.py --dry-run --limit 6 --out /tmp/bist.png
+  python scripts/main.py --post
+  python scripts/main.py --post --json out/bist_analiz_2025-10-12.json
 """
 
 import os
@@ -47,7 +47,6 @@ _TR_MONTHS = {1:"Ocak",2:"Şubat",3:"Mart",4:"Nisan",5:"Mayıs",6:"Haziran",
               7:"Temmuz",8:"Ağustos",9:"Eylül",10:"Ekim",11:"Kasım",12:"Aralık"}
 _TR_WD = {0:"Pazartesi",1:"Salı",2:"Çarşamba",3:"Perşembe",4:"Cuma",5:"Cumartesi",6:"Pazar"}
 
-# Hashtag havuzu (karıştırılıp 3–5 tanesi seçilecek)
 BASE_HASHTAGS = [
     "#Borsa", "#BIST", "#BIST100", "#Hisse", "#Yatırım",
     "#Finans", "#Borsaİstanbul", "#Piyasa", "#GününHisseleri", "#Portföy"
@@ -90,15 +89,21 @@ def oauth1_session_from_env() -> OAuth1Session:
         resource_owner_secret=envs["TWITTER_ACCESS_TOKEN_SECRET"],
     )
 
+def hashtag_from_ticker(sym: str) -> str:
+    # Twitter hashtagleri '.' gibi karakterleri bölüyor; #AKBNK.IS -> #AKBNK olsun
+    core = sym.split(".")[0]
+    return f"#{core}"
+
 # -------------------------
-# OUT/ JSON OKU & DÖNÜŞTÜR
+# OUT/ JSON OKU & DÖNÜŞTÜR (Yeni Şema)
 # -------------------------
 STOCK = Dict[str, Any]
 
 def find_latest_json(out_dir: str="out") -> Optional[str]:
-    files = glob.glob(os.path.join(out_dir, "bist_returns_*.json"))
+    files = glob.glob(os.path.join(out_dir, "*.json"))
     if not files: return None
     def key_fn(p):
+        # Önce ad içinde tarih varsa ona göre sırala, yoksa mtime
         m = re.search(r"(\d{4}-\d{2}-\d{2})", os.path.basename(p))
         if m:
             try: return datetime.fromisoformat(m.group(1))
@@ -107,41 +112,49 @@ def find_latest_json(out_dir: str="out") -> Optional[str]:
     files.sort(key=key_fn, reverse=True)
     return files[0]
 
+def _parse_pct_str(s: Any) -> Optional[float]:
+    """ '12.14%' -> 12.14 ; '-0.83%' -> -0.83 ; 0.5 -> 0.5 """
+    if s is None: return None
+    if isinstance(s, (int, float)): return float(s)
+    try:
+        txt = str(s).strip()
+        if txt.endswith("%"): txt = txt[:-1]
+        txt = txt.replace(",", ".")
+        return float(txt)
+    except Exception:
+        return None
+
 def load_out_json(path: Optional[str]=None) -> Dict[str, Any]:
     if path is None:
         path = find_latest_json()
         if not path:
-            raise FileNotFoundError("out/ altında 'bist_returns_YYYY-MM-DD.json' bulunamadı.")
+            raise FileNotFoundError("out/ altında JSON bulunamadı.")
     with open(path, "r", encoding="utf-8") as f:
         payload = json.load(f)
-    if "data" not in payload or not isinstance(payload["data"], list):
-        raise ValueError("JSON beklenen şemada değil: 'data' alanı yok.")
-    return payload
+
+    # Beklenen yeni şema: { "AKBNK.IS": { "kazandirma_oranlari_yuzde": { "gunluk": "0.00%", ... } }, ... }
+    if not isinstance(payload, dict):
+        raise ValueError("JSON beklenen şemada değil (dict olmalı).")
+
+    return {"_path": path, "data": payload}
 
 def transform_payload_to_stocks(payload: Dict[str, Any]) -> List[STOCK]:
+    raw: Dict[str, Any] = payload["data"]
     out: List[STOCK] = []
     ts = now_tr().timestamp()
-    for row in payload.get("data", []):
-        sym = row.get("symbol") or row.get("ticker")
-        if not sym: continue
-        r = row.get("returns", {}) or {}
 
-        def to_pct(x):
-            if x is None: return None
-            try:
-                x = float(x)
-                return x*100 if abs(x) <= 2.5 else x  # 0.35 -> 35, 12 -> 12 kalır
-            except: return None
+    for sym, row in raw.items():
+        perf = (row or {}).get("kazandirma_oranlari_yuzde", {}) or {}
 
         out.append({
             "ticker": sym,
-            "name": row.get("name") or sym,
-            "last_price": row.get("post_close_price"),
-            "pct_1d": to_pct(r.get("daily")),
-            "pct_30d": to_pct(r.get("30d")),
-            "pct_3m": to_pct(r.get("90d")),
-            "pct_6m": to_pct(r.get("180d")),
-            "pct_360d": to_pct(r.get("360d")),
+            "name": sym,
+            "last_price": row.get("bugun_kapanis"),
+            "pct_1d": _parse_pct_str(perf.get("gunluk")),
+            "pct_30d": _parse_pct_str(perf.get("aylik_30_gun")),
+            "pct_3m": _parse_pct_str(perf.get("3_aylik_90_gun")),
+            "pct_6m": _parse_pct_str(perf.get("6_aylik_180_gun")),
+            "pct_360d": _parse_pct_str(perf.get("12_aylik_360_gun")),
             "last_updated": ts,
         })
     return out
@@ -191,16 +204,14 @@ def compose_tweet_from_templates(stocks: List[STOCK]) -> str:
     template = random.choice(TEMPLATES)
     body = template.format(**ctx).strip()
 
-    # Hashtagler: baz havuzdan 3–5 + en fazla 4 ticker etiketi
+    # Hashtagler: baz havuzdan 3–5 + en fazla 4 ticker etiketi ('.IS' atılır)
     tags = BASE_HASHTAGS[:]
     random.shuffle(tags)
     base_pick = tags[:random.randint(3,5)]
 
-    # Top kazananların ticker hashtagleri
     top = sorted([s for s in stocks if s.get("pct_1d") is not None], key=lambda x: x["pct_1d"], reverse=True)[:4]
-    ticker_tags = [f"#{s['ticker']}" for s in top]
+    ticker_tags = [hashtag_from_ticker(s['ticker']) for s in top]
 
-    # Birleştir & kısalt
     all_tags = list(dict.fromkeys(base_pick + ticker_tags))
     random.shuffle(all_tags)
 
@@ -237,7 +248,8 @@ def render_table(draw: ImageDraw.ImageDraw, data: List[STOCK], start_y: int, tab
                  title_font, header_font, data_font) -> int:
     W = CANVAS_W
     INNER_W = W - 2*MARGIN_X
-    sorted_data = sorted(data, key=lambda x: (x.get(sort_key) is not None, x.get(sort_key, 0)), reverse=True)[:limit]
+    # None'lar sona
+    sorted_data = sorted(data, key=lambda x: (x.get(sort_key) is not None, x.get(sort_key) if x.get(sort_key) is not None else -1e9), reverse=True)[:limit]
     COL_MAP = {"Hisse": 0.18*INNER_W, "P1": 0.164*INNER_W, "P2": 0.164*INNER_W, "P3": 0.164*INNER_W, "P4": 0.164*INNER_W, "P5": 0.164*INNER_W}
 
     draw.text((MARGIN_X, start_y), table_title, fill=(50,50,50), font=title_font)
@@ -307,7 +319,8 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     total_table_space = H - top_block_bottom - bottom_reserved
     per_table_fixed = TABLE_TITLE_H + (HEADER_H - 28) + 4 + 12
     space_for_rows = max(0, total_table_space - 2*TABLE_GAP_Y - 3*per_table_fixed)
-    rows_fit = max(5, min(limit, int(space_for_rows // (5*ROW_H))))
+    # Satır sayısını sınırlı tut
+    rows_fit = max(5, min(limit, int(space_for_rows // (1*ROW_H))))
     if rows_fit < 5: rows_fit = 5
 
     HEADER_MAP = {

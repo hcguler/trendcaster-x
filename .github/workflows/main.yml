@@ -2,7 +2,7 @@ name: trend-tweets
 
 on:
   schedule:
-    # Her hafta içi 19:00 (Europe/Istanbul, UTC+3) => 16:00 UTC
+    # Hafta içi 19:00 (Europe/Istanbul, UTC+3) => 16:00 UTC
     - cron: "0 16 * * 1-5"
   workflow_dispatch: {}
 
