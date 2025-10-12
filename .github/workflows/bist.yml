@@ -30,7 +30,7 @@ jobs:
 
       - name: Run collector
         run: |
-          python bist_returns.py
+          python scripts/bist_returns.py
 
       - name: Commit & push if changed
         env:
