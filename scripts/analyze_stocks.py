@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 # TUM BIST LISTESI — DINAMIK
 # =========================
 
-BIST_ALL_TICKERS_OVER_ONE_YEAR_EXPANDED = [
+FALLBACK_TICKERS = [
     # Bankalar
     "AKBNK.IS", "GARAN.IS", "YKBNK.IS", "ISCTR.IS", "HALKB.IS", 
     "VAKBN.IS", "TSKB.IS", "SKBNK.IS", "ALBRK.IS", "KLNMA.IS",
