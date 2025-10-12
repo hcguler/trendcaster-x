@@ -3,7 +3,7 @@ name: BIST Returns Daily
 on:
   schedule:
     # Europe/Istanbul (UTC+3) 18:30 == 15:30 UTC
-    - cron: "30 15 * * *"
+    - cron: "30 15 * * 1-5"
   workflow_dispatch:
 
 jobs:
