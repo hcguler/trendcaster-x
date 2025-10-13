@@ -60,8 +60,6 @@ FALLBACK_TICKERS = [
     "KOZAL.IS", "IPEKE.IS", "KOZAA.IS", "DOHOL.IS", "SOKM.IS"
 ]
 
-
-
 def _ensure_is_suffix(sym: str) -> str:
     if not sym:
         return sym
@@ -132,7 +130,6 @@ def load_all_bist_tickers() -> list[str]:
 # --- BURAYI DÜZENLEDİK: Artik dinamik ---
 BIST_TICKERS = load_all_bist_tickers()
 
-
 # =========================
 # YARDIMCI FONKSIYONLAR
 # =========================
@@ -140,7 +137,6 @@ BIST_TICKERS = load_all_bist_tickers()
 def get_closest_price(data_frame: pd.DataFrame, date: datetime):
     """Belirtilen tarihe en yakın geçmişteki kapanış fiyatını bulur."""
     try:
-        # yfinance tarih index'i genellikle naive YYYY-MM-DD ile uyumlu çalışır
         return data_frame.loc[date.strftime('%Y-%m-%d')]['Close']
     except KeyError:
         past = data_frame.loc[:date.strftime('%Y-%m-%d')]
@@ -193,10 +189,13 @@ def analyze_stocks():
                 analysis_results[ticker] = {"hata": "no_history"}
                 continue
 
-            # Son gün (kapanıştan sonra çalıştığını varsayıyoruz)
-            today_row = hist.iloc[-1]
-            open_today  = float(today_row.get('Open', 0) or 0)
-            close_today = float(today_row.get('Close', 0) or 0)
+            # Son kapanış ve bir önceki kapanış
+            # Not: yfinance günlük seride son satır genellikle en son tamamlanmış seanstır.
+            close_today = float(hist['Close'].iloc[-1] or 0)
+
+            prev_close = None
+            if len(hist) >= 2:
+                prev_close = float(hist['Close'].iloc[-2] or 0)
 
             # Geçmiş referans tarihleri
             d30  = today - timedelta(days=30)
@@ -210,14 +209,15 @@ def analyze_stocks():
             c360 = get_closest_price(hist, d360)
 
             # Yüzdeler — verisi yoksa 0
-            daily_ret   = _pct_change(close_today, open_today)    # open_today yoksa 0
+            # GÜNCELLENDİ: Günlük getiri = (bugünkü Kapanış - dünkü Kapanış) / dünkü Kapanış
+            daily_ret   = _pct_change(close_today, prev_close)
             monthly_ret = _pct_change(close_today, c30)
             q90_ret     = _pct_change(close_today, c90)
             h180_ret    = _pct_change(close_today, c180)
             y360_ret    = _pct_change(close_today, c360)
 
             analysis_results[ticker] = {
-                "bugun_acilis": open_today,
+                "dun_kapanis": float(prev_close or 0),
                 "bugun_kapanis": close_today,
                 "gecmis_kapanis_fiyatlari": {
                     "30_gun_once": float(c30 or 0),
@@ -226,11 +226,11 @@ def analyze_stocks():
                     "360_gun_once": float(c360 or 0),
                 },
                 "kazandirma_oranlari_yuzde": {
-                    "gunluk": _fmt_pct(daily_ret),
-                    "aylik_30_gun": _fmt_pct(monthly_ret),   # yoksa 0.00%
-                    "3_aylik_90_gun": _fmt_pct(q90_ret),     # yoksa 0.00%
-                    "6_aylik_180_gun": _fmt_pct(h180_ret),   # yoksa 0.00%
-                    "12_aylik_360_gun": _fmt_pct(y360_ret),  # yoksa 0.00%
+                    "gunluk": _fmt_pct(daily_ret),           # DÜZENLENDİ
+                    "aylik_30_gun": _fmt_pct(monthly_ret),
+                    "3_aylik_90_gun": _fmt_pct(q90_ret),
+                    "6_aylik_180_gun": _fmt_pct(h180_ret),
+                    "12_aylik_360_gun": _fmt_pct(y360_ret),
                 }
             }
 

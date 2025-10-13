@@ -39,7 +39,7 @@ CANVAS_W, CANVAS_H = 1280, 1280
 MARGIN_X, MARGIN_Y = 60, 90
 TABLE_TITLE_H = 36
 ROW_H = 42
-HEADER_H = 64
+HEADER_H = 80  # iki satırlı/uzun başlıklar için artırıldı
 FOOTER_H = 90
 TABLE_GAP_Y = 28
 
@@ -88,6 +88,16 @@ def hashtag_from_ticker(sym: str) -> str:
 
 def display_ticker(sym: str) -> str:
     return sym.split(".")[0] if sym else sym
+
+def fmt_date_range_ddmmyyyy(end_dt: datetime, days: int) -> str:
+    """
+    'GG.AA.YYYY-GG.AA.YYYY' biçiminde aralık döndürür.
+    Not: 'days' kadar geriye gidilen tarihten bugüne (end_dt) aralık.
+    """
+    start_dt = end_dt - timedelta(days=days)
+    def _fmt(d: datetime) -> str:
+        return f"{d.day:02d}.{d.month:02d}.{d.year:04d}"
+    return f"{_fmt(start_dt)}-{_fmt(end_dt)}"
 
 # -------------------------
 # OUT/ JSON OKU & DÖNÜŞTÜR (bist_analiz_* şeması)
@@ -246,6 +256,7 @@ def render_table(draw: ImageDraw.ImageDraw, data: List[STOCK], start_y: int, tab
 
     COL_MAP = {"Hisse": 0.18*INNER_W, "P1": 0.164*INNER_W, "P2": 0.164*INNER_W, "P3": 0.164*INNER_W, "P4": 0.164*INNER_W, "P5": 0.164*INNER_W}
 
+    # Tablo başlığı
     draw.text((MARGIN_X, start_y), table_title, fill=(50,50,50), font=title_font)
     current_y = start_y + TABLE_TITLE_H + 6
 
@@ -292,12 +303,13 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
 
     # Kolon sabitleri: tüm tablolarda aynı sıra
     # "Günlük, Aylık, 3 Ay, 6 Ay, Yıllık"
-    key_1d = "pct_1d"
-    key_30d = "pct_30d"
-    key_3m = "pct_3m"
-    key_6m = "pct_6m"
+    key_1d   = "pct_1d"
+    key_30d  = "pct_30d"
+    key_3m   = "pct_3m"
+    key_6m   = "pct_6m"
     key_360d = "pct_360d"
 
+    # Görsel
     img = Image.new("RGB", (W,H), color=BG)
     draw = ImageDraw.Draw(img)
 
@@ -317,40 +329,47 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     top_block_bottom = line_y + 12
     current_y = top_block_bottom + 16
 
+    # --- DİNAMİK BAŞLIKLAR (yanında aralık: GG.AA.YYYY-GG.AA.YYYY) ---
+    rng_1d   = fmt_date_range_ddmmyyyy(now, 1)
+    rng_30d  = fmt_date_range_ddmmyyyy(now, 30)
+    rng_3m   = fmt_date_range_ddmmyyyy(now, 90)
+    rng_6m   = fmt_date_range_ddmmyyyy(now, 180)
+    rng_360d = fmt_date_range_ddmmyyyy(now, 360)
+
     HEADER_MAP = {
         "ticker": "Hisse",
-        key_1d:  "Günlük %",
-        key_30d: "Aylık %",
-        key_3m:  "3 Ay %",
-        key_6m:  "6 Ay %",
-        key_360d:"Yıllık %",
+        key_1d:   f"Günlük % ({rng_1d})",
+        key_30d:  f"Aylık % ({rng_30d})",
+        key_3m:   f"3 Ay % ({rng_3m})",
+        key_6m:   f"6 Ay % ({rng_6m})",
+        key_360d: f"Yıllık % ({rng_360d})",
     }
 
     # Tüm tablolarda kolon sırası sabit:
     col_order_common = ["ticker", key_1d, key_30d, key_3m, key_6m, key_360d]
 
-    # 1) GÜNLÜK – en çok kazandıran 5
+    # 1) GÜNLÜK — En çok kazandıran hisseler
     current_y = render_table(
         draw, stock_data, current_y,
-        "GÜNLÜK: En Çok Kazandıranlar",
+        "GÜNLÜK — En çok kazandıran hisseler",
         key_1d, 5, col_order_common, HEADER_MAP,
         table_title_font, table_header_font, table_data_font
     )
     current_y += TABLE_GAP_Y
 
-    # 2) AYLIK – en çok kazandıran 5
+    # 2) AYLIK — En çok kazandıran hisseler
     current_y = render_table(
         draw, stock_data, current_y,
-        "AYLIK: En Çok Kazandıranlar",
+        "AYLIK — En çok kazandıran hisseler",
         key_30d, 5, col_order_common, HEADER_MAP,
         table_title_font, table_header_font, table_data_font
     )
     current_y += TABLE_GAP_Y
 
-    # 3) YILLIK – en çok kazandıran 5
+    # 3) YILLIK — En çok kazandıran hisseler
     current_y = render_table(
         draw, stock_data, current_y,
-        "YILLIK: En Çok Kazandıranlar",
+        "YILLIK — En çok kazandıran hisseler",
         key_360d, 5, col_order_common, HEADER_MAP,
         table_title_font, table_header_font, table_data_font
     )
