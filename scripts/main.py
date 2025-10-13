@@ -39,7 +39,8 @@ CANVAS_W, CANVAS_H = 1280, 1280
 MARGIN_X, MARGIN_Y = 60, 90
 TABLE_TITLE_H = 36
 ROW_H = 42
-HEADER_H = 80  # iki satırlı/uzun başlıklar için artırıldı
+HEADER_H = 64           # tablo sütun başlık yüksekliği (değişmedi)
+SUBTITLE_H = 22         # tablo alt başlığı (tarih aralığı) için
 FOOTER_H = 90
 TABLE_GAP_Y = 28
 
@@ -90,14 +91,11 @@ def display_ticker(sym: str) -> str:
     return sym.split(".")[0] if sym else sym
 
 def fmt_date_range_ddmmyyyy(end_dt: datetime, days: int) -> str:
-    """
-    'GG.AA.YYYY-GG.AA.YYYY' biçiminde aralık döndürür.
-    Not: 'days' kadar geriye gidilen tarihten bugüne (end_dt) aralık.
-    """
+    """GG.AA.YYYY-GG.AA.YYYY aralığı; start = end_dt - days"""
     start_dt = end_dt - timedelta(days=days)
-    def _fmt(d: datetime) -> str:
+    def _f(d: datetime) -> str:
         return f"{d.day:02d}.{d.month:02d}.{d.year:04d}"
-    return f"{_fmt(start_dt)}-{_fmt(end_dt)}"
+    return f"{_f(start_dt)}-{_f(end_dt)}"
 
 # -------------------------
 # OUT/ JSON OKU & DÖNÜŞTÜR (bist_analiz_* şeması)
@@ -117,7 +115,6 @@ def find_latest_json(out_dir: str="out") -> Optional[str]:
     return files[0]
 
 def _parse_pct_str(s: Any) -> Optional[float]:
-    """ '12.14%' -> 12.14 ; '-0.83%' -> -0.83 ; 0.5 -> 0.5 """
     if s is None: return None
     if isinstance(s, (int, float)): return float(s)
     try:
@@ -143,7 +140,6 @@ def transform_payload_to_stocks(payload: Dict[str, Any]) -> List[STOCK]:
     raw: Dict[str, Any] = payload["data"]
     out: List[STOCK] = []
     ts = now_tr().timestamp()
-
     for sym, row in raw.items():
         perf = (row or {}).get("kazandirma_oranlari_yuzde", {}) or {}
         out.append({
@@ -203,7 +199,6 @@ def compose_tweet_from_templates(stocks: List[STOCK]) -> str:
     template = random.choice(TEMPLATES)
     body = template.format(**ctx).strip()
 
-    # Hashtagler: baz havuzdan 3–5 + en fazla 4 ticker etiketi ('.IS' atılır)
     tags = BASE_HASHTAGS[:]
     random.shuffle(tags)
     base_pick = tags[:random.randint(3,5)]
@@ -244,22 +239,33 @@ def load_font(size: int, bold: bool=False):
 
 def render_table(draw: ImageDraw.ImageDraw, data: List[STOCK], start_y: int, table_title: str,
                  sort_key: str, limit: int, col_order: List[str], header_map: Dict[str,str],
-                 title_font, header_font, data_font) -> int:
+                 title_font, subtitle_font, header_font, data_font,
+                 date_range_text: Optional[str] = None) -> int:
+    """Tek tabloyu render eder; title altında opsiyonel tarih aralığı yazar."""
     W = CANVAS_W
     INNER_W = W - 2*MARGIN_X
-    # İlgili döneme göre en çok kazandıran ilk 5 (None'lar sona)
+
+    # İlgili döneme göre en çok kazandıran ilk N (None'lar sona)
     sorted_data = sorted(
         data,
         key=lambda x: (x.get(sort_key) is not None, x.get(sort_key) if x.get(sort_key) is not None else -1e9),
         reverse=True
-    )[:5]  # her zaman 5
+    )[:limit]
 
     COL_MAP = {"Hisse": 0.18*INNER_W, "P1": 0.164*INNER_W, "P2": 0.164*INNER_W, "P3": 0.164*INNER_W, "P4": 0.164*INNER_W, "P5": 0.164*INNER_W}
 
-    # Tablo başlığı
+    # Başlık
     draw.text((MARGIN_X, start_y), table_title, fill=(50,50,50), font=title_font)
-    current_y = start_y + TABLE_TITLE_H + 6
+    current_y = start_y + TABLE_TITLE_H
 
+    # Tarih aralığı (tabloya bağlı, sütun başlıklarına dokunmadan)
+    if date_range_text:
+        draw.text((MARGIN_X, current_y), date_range_text, fill=(90,90,100), font=subtitle_font)
+        current_y += SUBTITLE_H
+
+    current_y += 6
+
+    # Header çiz
     x = MARGIN_X
     labels = ["Hisse","P1","P2","P3","P4","P5"]
     header_labels = ["Hisse"] + [header_map.get(c, c) for c in col_order[1:]]
@@ -275,10 +281,10 @@ def render_table(draw: ImageDraw.ImageDraw, data: List[STOCK], start_y: int, tab
     draw.line([MARGIN_X, current_y, W - MARGIN_X, current_y], fill=(185,185,185), width=1)
     current_y += 4
 
+    # Satırlar
     for i, s in enumerate(sorted_data):
         x = MARGIN_X
         row_y = current_y + i*ROW_H
-        # .IS'siz göster
         draw.text((x, row_y), display_ticker(s["ticker"]), fill=(20,20,20), font=data_font)
         x += COL_MAP["Hisse"]
         for data_key, col in zip(col_order[1:], ["P1","P2","P3","P4","P5"]):
@@ -301,8 +307,6 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     FRAME = (0,102,204)
     now = now_tr()
 
-    # Kolon sabitleri: tüm tablolarda aynı sıra
-    # "Günlük, Aylık, 3 Ay, 6 Ay, Yıllık"
     key_1d   = "pct_1d"
     key_30d  = "pct_30d"
     key_3m   = "pct_3m"
@@ -316,7 +320,8 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     header_font = load_font(44, bold=True)
     sub_header_font = load_font(28)
     table_title_font = load_font(28, bold=True)
-    table_header_font = load_font(19, bold=True)
+    table_subtitle_font = load_font(18)             # tarih aralığı
+    table_header_font = load_font(19, bold=True)    # sütun başlıkları (değişmedi)
     table_data_font = load_font(22)
     foot_font = load_font(20)
 
@@ -326,54 +331,56 @@ def render_image(stock_data: List[STOCK], limit: int) -> bytes:
     line_y = MARGIN_Y + 44 + 20
     draw.line([MARGIN_X, line_y, W - MARGIN_X, line_y], fill=FRAME, width=2)
 
-    top_block_bottom = line_y + 12
-    current_y = top_block_bottom + 16
+    current_y = line_y + 28
 
-    # --- DİNAMİK BAŞLIKLAR (yanında aralık: GG.AA.YYYY-GG.AA.YYYY) ---
-    rng_1d   = fmt_date_range_ddmmyyyy(now, 1)
-    rng_30d  = fmt_date_range_ddmmyyyy(now, 30)
-    rng_3m   = fmt_date_range_ddmmyyyy(now, 90)
-    rng_6m   = fmt_date_range_ddmmyyyy(now, 180)
-    rng_360d = fmt_date_range_ddmmyyyy(now, 360)
-
+    # Sütun başlıkları (SABİT – tarih içermez)
     HEADER_MAP = {
         "ticker": "Hisse",
-        key_1d:   f"Günlük % ({rng_1d})",
-        key_30d:  f"Aylık % ({rng_30d})",
-        key_3m:   f"3 Ay % ({rng_3m})",
-        key_6m:   f"6 Ay % ({rng_6m})",
-        key_360d: f"Yıllık % ({rng_360d})",
+        key_1d:   "Günlük %",
+        key_30d:  "Aylık %",
+        key_3m:   "3 Ay %",
+        key_6m:   "6 Ay %",
+        key_360d: "Yıllık %",
     }
 
-    # Tüm tablolarda kolon sırası sabit:
-    col_order_common = ["ticker", key_1d, key_30d, key_3m, key_6m, key_360d]
-
-    # 1) GÜNLÜK — En çok kazandıran hisseler
+    # --- 1) GÜNLÜK — En çok kazandıran hisseler ---
+    col_order_daily = ["ticker", key_1d, key_30d, key_3m, key_6m, key_360d]  # günlük ilk sütun
+    daily_range = fmt_date_range_ddmmyyyy(now, 1)
     current_y = render_table(
         draw, stock_data, current_y,
         "GÜNLÜK — En çok kazandıran hisseler",
-        key_1d, 5, col_order_common, HEADER_MAP,
-        table_title_font, table_header_font, table_data_font
+        key_1d, limit, col_order_daily, HEADER_MAP,
+        table_title_font, table_subtitle_font, table_header_font, table_data_font,
+        date_range_text=f"({daily_range})"
     )
     current_y += TABLE_GAP_Y
 
-    # 2) AYLIK — En çok kazandıran hisseler
+    # --- 2) AYLIK — En çok kazandıran hisseler ---
+    # Aylık sütunu başa
+    col_order_monthly = ["ticker", key_30d, key_1d, key_3m, key_6m, key_360d]
+    monthly_range = fmt_date_range_ddmmyyyy(now, 30)
     current_y = render_table(
         draw, stock_data, current_y,
         "AYLIK — En çok kazandıran hisseler",
-        key_30d, 5, col_order_common, HEADER_MAP,
-        table_title_font, table_header_font, table_data_font
+        key_30d, limit, col_order_monthly, HEADER_MAP,
+        table_title_font, table_subtitle_font, table_header_font, table_data_font,
+        date_range_text=f"({monthly_range})"
     )
     current_y += TABLE_GAP_Y
 
-    # 3) YILLIK — En çok kazandıran hisseler
+    # --- 3) YILLIK — En çok kazandıran hisseler ---
+    # Yıllık sütunu başa
+    col_order_yearly = ["ticker", key_360d, key_1d, key_30d, key_3m, key_6m]
+    yearly_range = fmt_date_range_ddmmyyyy(now, 360)
     current_y = render_table(
         draw, stock_data, current_y,
         "YILLIK — En çok kazandıran hisseler",
-        key_360d, 5, col_order_common, HEADER_MAP,
-        table_title_font, table_header_font, table_data_font
+        key_360d, limit, col_order_yearly, HEADER_MAP,
+        table_title_font, table_subtitle_font, table_header_font, table_data_font,
+        date_range_text=f"({yearly_range})"
     )
 
+    # Alt bilgi
     date_line = f"{now.day:02d} {tr_month_name(now.month)} {now.year}, {tr_wd_name(now.weekday())}"
     footer_text = f"Tarih: {date_line}"
     draw.text((W//2, H - 40), footer_text, fill=(80,90,100), font=foot_font, anchor="ms")
