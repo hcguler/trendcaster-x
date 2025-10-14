@@ -328,8 +328,8 @@
         "gecmis_kapanis_fiyatlari": {
             "30_gun_once": 28.802339553833008,
             "90_gun_once": 24.24013900756836,
-            "180_gun_once": 24.782062530517578,
-            "360_gun_once": 24.20404624938965
+            "180_gun_once": 24.782060623168945,
+            "360_gun_once": 24.204044342041016
         },
         "kazandirma_oranlari_yuzde": {
             "gunluk": "-2.02%",
@@ -618,7 +618,7 @@
             "30_gun_once": 8.64384651184082,
             "90_gun_once": 8.832403182983398,
             "180_gun_once": 7.373568058013916,
-            "360_gun_once": 5.450345516204834
+            "360_gun_once": 5.450345039367676
         },
         "kazandirma_oranlari_yuzde": {
             "gunluk": "2.16%",
