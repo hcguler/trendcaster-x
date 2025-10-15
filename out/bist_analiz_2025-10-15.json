@@ -1,0 +1,1569 @@
+{
+    "AEFES.IS": {
+        "dun_kapanis": 13.720000267028809,
+        "bugun_kapanis": 13.390000343322754,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 15.1899995803833,
+            "90_gun_once": 15.180000305175781,
+            "180_gun_once": 16.15373420715332,
+            "360_gun_once": 17.740346908569336
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.41%",
+            "aylik_30_gun": "-11.85%",
+            "3_aylik_90_gun": "-11.79%",
+            "6_aylik_180_gun": "-17.11%",
+            "12_aylik_360_gun": "-24.52%"
+        }
+    },
+    "AFYON.IS": {
+        "dun_kapanis": 12.420000076293945,
+        "bugun_kapanis": 12.300000190734863,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 13.300000190734863,
+            "90_gun_once": 14.319999694824219,
+            "180_gun_once": 13.460000038146973,
+            "360_gun_once": 13.35610580444336
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.97%",
+            "aylik_30_gun": "-7.52%",
+            "3_aylik_90_gun": "-14.11%",
+            "6_aylik_180_gun": "-8.62%",
+            "12_aylik_360_gun": "-7.91%"
+        }
+    },
+    "AGESA.IS": {
+        "dun_kapanis": 187.10000610351562,
+        "bugun_kapanis": 189.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 167.0,
+            "90_gun_once": 156.0,
+            "180_gun_once": 134.0,
+            "360_gun_once": 96.94873046875
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "1.02%",
+            "aylik_30_gun": "13.17%",
+            "3_aylik_90_gun": "21.15%",
+            "6_aylik_180_gun": "41.04%",
+            "12_aylik_360_gun": "94.95%"
+        }
+    },
+    "AGHOL.IS": {
+        "dun_kapanis": 25.200000762939453,
+        "bugun_kapanis": 24.34000015258789,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 27.420000076293945,
+            "90_gun_once": 26.825000762939453,
+            "180_gun_once": 27.264575958251953,
+            "360_gun_once": 28.196279525756836
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.41%",
+            "aylik_30_gun": "-11.23%",
+            "3_aylik_90_gun": "-9.26%",
+            "6_aylik_180_gun": "-10.73%",
+            "12_aylik_360_gun": "-13.68%"
+        }
+    },
+    "AKBNK.IS": {
+        "dun_kapanis": 55.95000076293945,
+        "bugun_kapanis": 53.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 65.44999694824219,
+            "90_gun_once": 67.8499984741211,
+            "180_gun_once": 49.540000915527344,
+            "360_gun_once": 49.05565643310547
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-4.38%",
+            "aylik_30_gun": "-18.26%",
+            "3_aylik_90_gun": "-21.15%",
+            "6_aylik_180_gun": "7.99%",
+            "12_aylik_360_gun": "9.06%"
+        }
+    },
+    "AKCNS.IS": {
+        "dun_kapanis": 129.89999389648438,
+        "bugun_kapanis": 127.9000015258789,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 134.3000030517578,
+            "90_gun_once": 136.6999969482422,
+            "180_gun_once": 170.0,
+            "360_gun_once": 145.3057403564453
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.54%",
+            "aylik_30_gun": "-4.77%",
+            "3_aylik_90_gun": "-6.44%",
+            "6_aylik_180_gun": "-24.76%",
+            "12_aylik_360_gun": "-11.98%"
+        }
+    },
+    "AKFGY.IS": {
+        "dun_kapanis": 2.5399999618530273,
+        "bugun_kapanis": 2.4800000190734863,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 2.7100000381469727,
+            "90_gun_once": 2.890000104904175,
+            "180_gun_once": 1.8600000143051147,
+            "360_gun_once": 1.840000033378601
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.36%",
+            "aylik_30_gun": "-8.49%",
+            "3_aylik_90_gun": "-14.19%",
+            "6_aylik_180_gun": "33.33%",
+            "12_aylik_360_gun": "34.78%"
+        }
+    },
+    "AKGRT.IS": {
+        "dun_kapanis": 6.300000190734863,
+        "bugun_kapanis": 6.179999828338623,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 6.119999885559082,
+            "90_gun_once": 6.789999961853027,
+            "180_gun_once": 6.619999885559082,
+            "360_gun_once": 5.610000133514404
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.90%",
+            "aylik_30_gun": "0.98%",
+            "3_aylik_90_gun": "-8.98%",
+            "6_aylik_180_gun": "-6.65%",
+            "12_aylik_360_gun": "10.16%"
+        }
+    },
+    "AKSEN.IS": {
+        "dun_kapanis": 44.939998626708984,
+        "bugun_kapanis": 44.7400016784668,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 38.86000061035156,
+            "90_gun_once": 36.400001525878906,
+            "180_gun_once": 32.79999923706055,
+            "360_gun_once": 34.18000030517578
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.45%",
+            "aylik_30_gun": "15.13%",
+            "3_aylik_90_gun": "22.91%",
+            "6_aylik_180_gun": "36.40%",
+            "12_aylik_360_gun": "30.90%"
+        }
+    },
+    "AKSUE.IS": {
+        "dun_kapanis": 17.059999465942383,
+        "bugun_kapanis": 16.850000381469727,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 18.969999313354492,
+            "90_gun_once": 17.780000686645508,
+            "180_gun_once": 20.440000534057617,
+            "360_gun_once": 10.539999961853027
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.23%",
+            "aylik_30_gun": "-11.18%",
+            "3_aylik_90_gun": "-5.23%",
+            "6_aylik_180_gun": "-17.56%",
+            "12_aylik_360_gun": "59.87%"
+        }
+    },
+    "ALARK.IS": {
+        "dun_kapanis": 78.5,
+        "bugun_kapanis": 77.3499984741211,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 83.25,
+            "90_gun_once": 87.5,
+            "180_gun_once": 96.0,
+            "360_gun_once": 83.66230773925781
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.46%",
+            "aylik_30_gun": "-7.09%",
+            "3_aylik_90_gun": "-11.60%",
+            "6_aylik_180_gun": "-19.43%",
+            "12_aylik_360_gun": "-7.54%"
+        }
+    },
+    "ALBRK.IS": {
+        "dun_kapanis": 7.71999979019165,
+        "bugun_kapanis": 7.619999885559082,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 8.539999961853027,
+            "90_gun_once": 8.890000343322754,
+            "180_gun_once": 6.5,
+            "360_gun_once": 5.126227378845215
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.30%",
+            "aylik_30_gun": "-10.77%",
+            "3_aylik_90_gun": "-14.29%",
+            "6_aylik_180_gun": "17.23%",
+            "12_aylik_360_gun": "48.65%"
+        }
+    },
+    "ANHYT.IS": {
+        "dun_kapanis": 94.25,
+        "bugun_kapanis": 92.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 87.19999694824219,
+            "90_gun_once": 80.05000305175781,
+            "180_gun_once": 88.19999694824219,
+            "360_gun_once": 92.4636459350586
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.86%",
+            "aylik_30_gun": "6.08%",
+            "3_aylik_90_gun": "15.55%",
+            "6_aylik_180_gun": "4.88%",
+            "12_aylik_360_gun": "0.04%"
+        }
+    },
+    "ARCLK.IS": {
+        "dun_kapanis": 111.4000015258789,
+        "bugun_kapanis": 108.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 131.89999389648438,
+            "90_gun_once": 128.1999969482422,
+            "180_gun_once": 121.4000015258789,
+            "360_gun_once": 147.0
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.60%",
+            "aylik_30_gun": "-17.74%",
+            "3_aylik_90_gun": "-15.37%",
+            "6_aylik_180_gun": "-10.63%",
+            "12_aylik_360_gun": "-26.19%"
+        }
+    },
+    "ARDYZ.IS": {
+        "dun_kapanis": 25.31999969482422,
+        "bugun_kapanis": 24.739999771118164,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 27.100000381469727,
+            "90_gun_once": 29.020000457763672,
+            "180_gun_once": 24.760000228881836,
+            "360_gun_once": 30.299999237060547
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.29%",
+            "aylik_30_gun": "-8.71%",
+            "3_aylik_90_gun": "-14.75%",
+            "6_aylik_180_gun": "-0.08%",
+            "12_aylik_360_gun": "-18.35%"
+        }
+    },
+    "ARTMS.IS": {
+        "dun_kapanis": 48.63999938964844,
+        "bugun_kapanis": 47.79999923706055,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 35.63999938964844,
+            "90_gun_once": 29.0,
+            "180_gun_once": 27.600000381469727,
+            "360_gun_once": 43.29999923706055
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.73%",
+            "aylik_30_gun": "34.12%",
+            "3_aylik_90_gun": "64.83%",
+            "6_aylik_180_gun": "73.19%",
+            "12_aylik_360_gun": "10.39%"
+        }
+    },
+    "ARZUM.IS": {
+        "dun_kapanis": 3.2699999809265137,
+        "bugun_kapanis": 3.0999999046325684,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 3.109999895095825,
+            "90_gun_once": 5.0,
+            "180_gun_once": 3.180000066757202,
+            "360_gun_once": 4.827205181121826
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.20%",
+            "aylik_30_gun": "-0.32%",
+            "3_aylik_90_gun": "-38.00%",
+            "6_aylik_180_gun": "-2.52%",
+            "12_aylik_360_gun": "-35.78%"
+        }
+    },
+    "ASELS.IS": {
+        "dun_kapanis": 214.0,
+        "bugun_kapanis": 212.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 185.1999969482422,
+            "90_gun_once": 161.89999389648438,
+            "180_gun_once": 129.89999389648438,
+            "360_gun_once": 59.25309371948242
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.93%",
+            "aylik_30_gun": "14.47%",
+            "3_aylik_90_gun": "30.95%",
+            "6_aylik_180_gun": "63.20%",
+            "12_aylik_360_gun": "257.79%"
+        }
+    },
+    "AYDEM.IS": {
+        "dun_kapanis": 17.56999969482422,
+        "bugun_kapanis": 17.299999237060547,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 18.610000610351562,
+            "90_gun_once": 18.209999084472656,
+            "180_gun_once": 17.40999984741211,
+            "360_gun_once": 24.360000610351562
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.54%",
+            "aylik_30_gun": "-7.04%",
+            "3_aylik_90_gun": "-5.00%",
+            "6_aylik_180_gun": "-0.63%",
+            "12_aylik_360_gun": "-28.98%"
+        }
+    },
+    "AYEN.IS": {
+        "dun_kapanis": 26.139999389648438,
+        "bugun_kapanis": 25.579999923706055,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 30.230552673339844,
+            "90_gun_once": 24.90212059020996,
+            "180_gun_once": 24.36650848388672,
+            "360_gun_once": 24.20404815673828
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.14%",
+            "aylik_30_gun": "-15.38%",
+            "3_aylik_90_gun": "2.72%",
+            "6_aylik_180_gun": "4.98%",
+            "12_aylik_360_gun": "5.68%"
+        }
+    },
+    "AYGAZ.IS": {
+        "dun_kapanis": 185.0,
+        "bugun_kapanis": 188.39999389648438,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 176.89999389648438,
+            "90_gun_once": 145.0,
+            "180_gun_once": 128.60000610351562,
+            "360_gun_once": 138.84774780273438
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "1.84%",
+            "aylik_30_gun": "6.50%",
+            "3_aylik_90_gun": "29.93%",
+            "6_aylik_180_gun": "46.50%",
+            "12_aylik_360_gun": "35.69%"
+        }
+    },
+    "BIMAS.IS": {
+        "dun_kapanis": 546.0,
+        "bugun_kapanis": 544.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 520.5038452148438,
+            "90_gun_once": 492.2209777832031,
+            "180_gun_once": 440.8050842285156,
+            "360_gun_once": 450.34832763671875
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.27%",
+            "aylik_30_gun": "4.61%",
+            "3_aylik_90_gun": "10.62%",
+            "6_aylik_180_gun": "23.52%",
+            "12_aylik_360_gun": "20.91%"
+        }
+    },
+    "BIOEN.IS": {
+        "dun_kapanis": 23.920000076293945,
+        "bugun_kapanis": 24.299999237060547,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 26.040000915527344,
+            "90_gun_once": 21.280000686645508,
+            "180_gun_once": 18.920000076293945,
+            "360_gun_once": 19.239999771118164
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "1.59%",
+            "aylik_30_gun": "-6.68%",
+            "3_aylik_90_gun": "14.19%",
+            "6_aylik_180_gun": "28.44%",
+            "12_aylik_360_gun": "26.30%"
+        }
+    },
+    "BUCIM.IS": {
+        "dun_kapanis": 6.230000019073486,
+        "bugun_kapanis": 6.070000171661377,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 6.75,
+            "90_gun_once": 7.190000057220459,
+            "180_gun_once": 7.62428617477417,
+            "360_gun_once": 6.35687255859375
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.57%",
+            "aylik_30_gun": "-10.07%",
+            "3_aylik_90_gun": "-15.58%",
+            "6_aylik_180_gun": "-20.39%",
+            "12_aylik_360_gun": "-4.51%"
+        }
+    },
+    "CIMSA.IS": {
+        "dun_kapanis": 42.7400016784668,
+        "bugun_kapanis": 42.63999938964844,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 46.380001068115234,
+            "90_gun_once": 50.150001525878906,
+            "180_gun_once": 49.97999954223633,
+            "360_gun_once": 30.341501235961914
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.23%",
+            "aylik_30_gun": "-8.06%",
+            "3_aylik_90_gun": "-14.98%",
+            "6_aylik_180_gun": "-14.69%",
+            "12_aylik_360_gun": "40.53%"
+        }
+    },
+    "DEVA.IS": {
+        "dun_kapanis": 67.5999984741211,
+        "bugun_kapanis": 66.4000015258789,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 65.75,
+            "90_gun_once": 60.75,
+            "180_gun_once": 57.400001525878906,
+            "360_gun_once": 66.8499984741211
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.78%",
+            "aylik_30_gun": "0.99%",
+            "3_aylik_90_gun": "9.30%",
+            "6_aylik_180_gun": "15.68%",
+            "12_aylik_360_gun": "-0.67%"
+        }
+    },
+    "DOAS.IS": {
+        "dun_kapanis": 171.60000610351562,
+        "bugun_kapanis": 170.39999389648438,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 178.6999969482422,
+            "90_gun_once": 187.3000030517578,
+            "180_gun_once": 197.6452178955078,
+            "360_gun_once": 188.56922912597656
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.70%",
+            "aylik_30_gun": "-4.64%",
+            "3_aylik_90_gun": "-9.02%",
+            "6_aylik_180_gun": "-13.78%",
+            "12_aylik_360_gun": "-9.64%"
+        }
+    },
+    "DOHOL.IS": {
+        "dun_kapanis": 17.8700008392334,
+        "bugun_kapanis": 17.579999923706055,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 17.290000915527344,
+            "90_gun_once": 15.361981391906738,
+            "180_gun_once": 16.16895294189453,
+            "360_gun_once": 12.7147216796875
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.62%",
+            "aylik_30_gun": "1.68%",
+            "3_aylik_90_gun": "14.44%",
+            "6_aylik_180_gun": "8.73%",
+            "12_aylik_360_gun": "38.26%"
+        }
+    },
+    "ECILC.IS": {
+        "dun_kapanis": 95.5,
+        "bugun_kapanis": 99.80000305175781,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 60.5,
+            "90_gun_once": 45.279998779296875,
+            "180_gun_once": 42.760284423828125,
+            "360_gun_once": 36.77847671508789
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "4.50%",
+            "aylik_30_gun": "64.96%",
+            "3_aylik_90_gun": "120.41%",
+            "6_aylik_180_gun": "133.39%",
+            "12_aylik_360_gun": "171.35%"
+        }
+    },
+    "EGEEN.IS": {
+        "dun_kapanis": 7737.5,
+        "bugun_kapanis": 7570.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 8257.5,
+            "90_gun_once": 7575.0,
+            "180_gun_once": 8980.0,
+            "360_gun_once": 9848.3994140625
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.16%",
+            "aylik_30_gun": "-8.33%",
+            "3_aylik_90_gun": "-0.07%",
+            "6_aylik_180_gun": "-15.70%",
+            "12_aylik_360_gun": "-23.13%"
+        }
+    },
+    "EKGYO.IS": {
+        "dun_kapanis": 19.040000915527344,
+        "bugun_kapanis": 18.059999465942383,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 20.700000762939453,
+            "90_gun_once": 19.15999984741211,
+            "180_gun_once": 10.94382095336914,
+            "360_gun_once": 9.502820014953613
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.15%",
+            "aylik_30_gun": "-12.75%",
+            "3_aylik_90_gun": "-5.74%",
+            "6_aylik_180_gun": "65.02%",
+            "12_aylik_360_gun": "90.05%"
+        }
+    },
+    "ENERY.IS": {
+        "dun_kapanis": 9.829999923706055,
+        "bugun_kapanis": 9.390000343322754,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 11.199999809265137,
+            "90_gun_once": 7.570855617523193,
+            "180_gun_once": 4.564486980438232,
+            "360_gun_once": 3.7316577434539795
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-4.48%",
+            "aylik_30_gun": "-16.16%",
+            "3_aylik_90_gun": "24.03%",
+            "6_aylik_180_gun": "105.72%",
+            "12_aylik_360_gun": "151.63%"
+        }
+    },
+    "ENKAI.IS": {
+        "dun_kapanis": 69.5999984741211,
+        "bugun_kapanis": 69.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 73.9525146484375,
+            "90_gun_once": 63.28201675415039,
+            "180_gun_once": 58.887107849121094,
+            "360_gun_once": 45.46608352661133
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.14%",
+            "aylik_30_gun": "-6.02%",
+            "3_aylik_90_gun": "9.83%",
+            "6_aylik_180_gun": "18.02%",
+            "12_aylik_360_gun": "52.86%"
+        }
+    },
+    "EREGL.IS": {
+        "dun_kapanis": 27.399999618530273,
+        "bugun_kapanis": 25.959999084472656,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 27.5,
+            "90_gun_once": 27.079999923706055,
+            "180_gun_once": 20.902435302734375,
+            "360_gun_once": 23.80500030517578
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.26%",
+            "aylik_30_gun": "-5.60%",
+            "3_aylik_90_gun": "-4.14%",
+            "6_aylik_180_gun": "24.20%",
+            "12_aylik_360_gun": "9.05%"
+        }
+    },
+    "FROTO.IS": {
+        "dun_kapanis": 92.6500015258789,
+        "bugun_kapanis": 92.44999694824219,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 105.30000305175781,
+            "90_gun_once": 94.4000015258789,
+            "180_gun_once": 91.55000305175781,
+            "360_gun_once": 93.82736206054688
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.22%",
+            "aylik_30_gun": "-12.20%",
+            "3_aylik_90_gun": "-2.07%",
+            "6_aylik_180_gun": "0.98%",
+            "12_aylik_360_gun": "-1.47%"
+        }
+    },
+    "GARAN.IS": {
+        "dun_kapanis": 126.69999694824219,
+        "bugun_kapanis": 119.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 146.3000030517578,
+            "90_gun_once": 141.60000610351562,
+            "180_gun_once": 102.80000305175781,
+            "360_gun_once": 106.94572448730469
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.68%",
+            "aylik_30_gun": "-18.32%",
+            "3_aylik_90_gun": "-15.61%",
+            "6_aylik_180_gun": "16.25%",
+            "12_aylik_360_gun": "11.74%"
+        }
+    },
+    "GLYHO.IS": {
+        "dun_kapanis": 10.420000076293945,
+        "bugun_kapanis": 10.119999885559082,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 9.189669609069824,
+            "90_gun_once": 8.743087768554688,
+            "180_gun_once": 7.234631538391113,
+            "360_gun_once": 5.450345516204834
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.88%",
+            "aylik_30_gun": "10.12%",
+            "3_aylik_90_gun": "15.75%",
+            "6_aylik_180_gun": "39.88%",
+            "12_aylik_360_gun": "85.68%"
+        }
+    },
+    "GOZDE.IS": {
+        "dun_kapanis": 20.15999984741211,
+        "bugun_kapanis": 19.6200008392334,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 21.299999237060547,
+            "90_gun_once": 18.649999618530273,
+            "180_gun_once": 18.34000015258789,
+            "360_gun_once": 25.780000686645508
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.68%",
+            "aylik_30_gun": "-7.89%",
+            "3_aylik_90_gun": "5.20%",
+            "6_aylik_180_gun": "6.98%",
+            "12_aylik_360_gun": "-23.89%"
+        }
+    },
+    "GUBRF.IS": {
+        "dun_kapanis": 287.5,
+        "bugun_kapanis": 278.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 274.0,
+            "90_gun_once": 247.8000030517578,
+            "180_gun_once": 298.75,
+            "360_gun_once": 188.8000030517578
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.30%",
+            "aylik_30_gun": "1.46%",
+            "3_aylik_90_gun": "12.19%",
+            "6_aylik_180_gun": "-6.95%",
+            "12_aylik_360_gun": "47.25%"
+        }
+    },
+    "GWIND.IS": {
+        "dun_kapanis": 24.100000381469727,
+        "bugun_kapanis": 23.459999084472656,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 23.700000762939453,
+            "90_gun_once": 25.34000015258789,
+            "180_gun_once": 26.719999313354492,
+            "360_gun_once": 23.5
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.66%",
+            "aylik_30_gun": "-1.01%",
+            "3_aylik_90_gun": "-7.42%",
+            "6_aylik_180_gun": "-12.20%",
+            "12_aylik_360_gun": "-0.17%"
+        }
+    },
+    "HALKB.IS": {
+        "dun_kapanis": 27.059999465942383,
+        "bugun_kapanis": 25.139999389648438,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 25.799999237060547,
+            "90_gun_once": 26.299999237060547,
+            "180_gun_once": 19.68000030517578,
+            "360_gun_once": 15.949999809265137
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-7.10%",
+            "aylik_30_gun": "-2.56%",
+            "3_aylik_90_gun": "-4.41%",
+            "6_aylik_180_gun": "27.74%",
+            "12_aylik_360_gun": "57.62%"
+        }
+    },
+    "HEKTS.IS": {
+        "dun_kapanis": 3.2699999809265137,
+        "bugun_kapanis": 3.240000009536743,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 4.019999980926514,
+            "90_gun_once": 3.5799999237060547,
+            "180_gun_once": 3.1700000762939453,
+            "360_gun_once": 3.690000057220459
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.92%",
+            "aylik_30_gun": "-19.40%",
+            "3_aylik_90_gun": "-9.50%",
+            "6_aylik_180_gun": "2.21%",
+            "12_aylik_360_gun": "-12.20%"
+        }
+    },
+    "HLGYO.IS": {
+        "dun_kapanis": 3.680000066757202,
+        "bugun_kapanis": 3.5399999618530273,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 3.8524999618530273,
+            "90_gun_once": 3.8237500190734863,
+            "180_gun_once": 2.3288228511810303,
+            "360_gun_once": 1.9987536668777466
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.80%",
+            "aylik_30_gun": "-8.11%",
+            "3_aylik_90_gun": "-7.42%",
+            "6_aylik_180_gun": "52.01%",
+            "12_aylik_360_gun": "77.11%"
+        }
+    },
+    "IHLAS.IS": {
+        "dun_kapanis": 3.619999885559082,
+        "bugun_kapanis": 3.4600000381469727,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 3.690000057220459,
+            "90_gun_once": 2.7899999618530273,
+            "180_gun_once": 2.569999933242798,
+            "360_gun_once": 0.9700000286102295
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-4.42%",
+            "aylik_30_gun": "-6.23%",
+            "3_aylik_90_gun": "24.01%",
+            "6_aylik_180_gun": "34.63%",
+            "12_aylik_360_gun": "256.70%"
+        }
+    },
+    "INDES.IS": {
+        "dun_kapanis": 7.760000228881836,
+        "bugun_kapanis": 7.670000076293945,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 7.920000076293945,
+            "90_gun_once": 7.199999809265137,
+            "180_gun_once": 6.619999885559082,
+            "360_gun_once": 6.28000020980835
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.16%",
+            "aylik_30_gun": "-3.16%",
+            "3_aylik_90_gun": "6.53%",
+            "6_aylik_180_gun": "15.86%",
+            "12_aylik_360_gun": "22.13%"
+        }
+    },
+    "IPEKE.IS": {
+        "dun_kapanis": 70.0,
+        "bugun_kapanis": 67.6500015258789,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 61.54999923706055,
+            "90_gun_once": 59.099998474121094,
+            "180_gun_once": 69.19999694824219,
+            "360_gun_once": 33.939998626708984
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.36%",
+            "aylik_30_gun": "9.91%",
+            "3_aylik_90_gun": "14.47%",
+            "6_aylik_180_gun": "-2.24%",
+            "12_aylik_360_gun": "99.32%"
+        }
+    },
+    "ISCTR.IS": {
+        "dun_kapanis": 12.029999732971191,
+        "bugun_kapanis": 11.640000343322754,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 14.869999885559082,
+            "90_gun_once": 14.640000343322754,
+            "180_gun_once": 10.65999984741211,
+            "360_gun_once": 11.588708877563477
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.24%",
+            "aylik_30_gun": "-21.72%",
+            "3_aylik_90_gun": "-20.49%",
+            "6_aylik_180_gun": "9.19%",
+            "12_aylik_360_gun": "0.44%"
+        }
+    },
+    "ISGYO.IS": {
+        "dun_kapanis": 19.030000686645508,
+        "bugun_kapanis": 18.81999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 20.239999771118164,
+            "90_gun_once": 18.440000534057617,
+            "180_gun_once": 15.319999694824219,
+            "360_gun_once": 15.569999694824219
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.10%",
+            "aylik_30_gun": "-7.02%",
+            "3_aylik_90_gun": "2.06%",
+            "6_aylik_180_gun": "22.85%",
+            "12_aylik_360_gun": "20.87%"
+        }
+    },
+    "JANTS.IS": {
+        "dun_kapanis": 20.719999313354492,
+        "bugun_kapanis": 20.31999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 22.959999084472656,
+            "90_gun_once": 20.239999771118164,
+            "180_gun_once": 22.38842010498047,
+            "360_gun_once": 28.18025016784668
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.93%",
+            "aylik_30_gun": "-11.50%",
+            "3_aylik_90_gun": "0.40%",
+            "6_aylik_180_gun": "-9.24%",
+            "12_aylik_360_gun": "-27.89%"
+        }
+    },
+    "KAREL.IS": {
+        "dun_kapanis": 9.0,
+        "bugun_kapanis": 8.699999809265137,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 9.899999618530273,
+            "90_gun_once": 8.220000267028809,
+            "180_gun_once": 8.550000190734863,
+            "360_gun_once": 9.260000228881836
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.33%",
+            "aylik_30_gun": "-12.12%",
+            "3_aylik_90_gun": "5.84%",
+            "6_aylik_180_gun": "1.75%",
+            "12_aylik_360_gun": "-6.05%"
+        }
+    },
+    "KARTN.IS": {
+        "dun_kapanis": 81.0,
+        "bugun_kapanis": 77.8499984741211,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 88.9000015258789,
+            "90_gun_once": 84.5,
+            "180_gun_once": 82.5,
+            "360_gun_once": 82.0
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.89%",
+            "aylik_30_gun": "-12.43%",
+            "3_aylik_90_gun": "-7.87%",
+            "6_aylik_180_gun": "-5.64%",
+            "12_aylik_360_gun": "-5.06%"
+        }
+    },
+    "KCHOL.IS": {
+        "dun_kapanis": 160.0,
+        "bugun_kapanis": 156.89999389648438,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 179.89999389648438,
+            "90_gun_once": 168.3000030517578,
+            "180_gun_once": 143.1999969482422,
+            "360_gun_once": 168.63014221191406
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.94%",
+            "aylik_30_gun": "-12.78%",
+            "3_aylik_90_gun": "-6.77%",
+            "6_aylik_180_gun": "9.57%",
+            "12_aylik_360_gun": "-6.96%"
+        }
+    },
+    "KLNMA.IS": {
+        "dun_kapanis": 15.0600004196167,
+        "bugun_kapanis": 14.239999771118164,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 12.119999885559082,
+            "90_gun_once": 8.699999809265137,
+            "180_gun_once": 7.289999961853027,
+            "360_gun_once": 14.5
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.44%",
+            "aylik_30_gun": "17.49%",
+            "3_aylik_90_gun": "63.68%",
+            "6_aylik_180_gun": "95.34%",
+            "12_aylik_360_gun": "-1.79%"
+        }
+    },
+    "KMPUR.IS": {
+        "dun_kapanis": 17.360000610351562,
+        "bugun_kapanis": 16.68000030517578,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 18.200000762939453,
+            "90_gun_once": 15.0,
+            "180_gun_once": 17.149999618530273,
+            "360_gun_once": 16.979999542236328
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.92%",
+            "aylik_30_gun": "-8.35%",
+            "3_aylik_90_gun": "11.20%",
+            "6_aylik_180_gun": "-2.74%",
+            "12_aylik_360_gun": "-1.77%"
+        }
+    },
+    "KONTR.IS": {
+        "dun_kapanis": 32.34000015258789,
+        "bugun_kapanis": 32.34000015258789,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 25.5,
+            "90_gun_once": 22.260000228881836,
+            "180_gun_once": 27.280534744262695,
+            "360_gun_once": 40.16189956665039
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "0.00%",
+            "aylik_30_gun": "26.82%",
+            "3_aylik_90_gun": "45.28%",
+            "6_aylik_180_gun": "18.55%",
+            "12_aylik_360_gun": "-19.48%"
+        }
+    },
+    "KORDS.IS": {
+        "dun_kapanis": 55.150001525878906,
+        "bugun_kapanis": 53.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 60.0,
+            "90_gun_once": 57.04999923706055,
+            "180_gun_once": 55.70000076293945,
+            "360_gun_once": 73.0
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.99%",
+            "aylik_30_gun": "-10.83%",
+            "3_aylik_90_gun": "-6.22%",
+            "6_aylik_180_gun": "-3.95%",
+            "12_aylik_360_gun": "-26.71%"
+        }
+    },
+    "KOZAA.IS": {
+        "dun_kapanis": 88.5,
+        "bugun_kapanis": 87.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 79.5,
+            "90_gun_once": 82.5,
+            "180_gun_once": 88.69999694824219,
+            "360_gun_once": 57.099998474121094
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.13%",
+            "aylik_30_gun": "10.06%",
+            "3_aylik_90_gun": "6.06%",
+            "6_aylik_180_gun": "-1.35%",
+            "12_aylik_360_gun": "53.24%"
+        }
+    },
+    "KOZAL.IS": {
+        "dun_kapanis": 24.579999923706055,
+        "bugun_kapanis": 23.639999389648438,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 23.360000610351562,
+            "90_gun_once": 23.860000610351562,
+            "180_gun_once": 28.420000076293945,
+            "360_gun_once": 19.979999542236328
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.82%",
+            "aylik_30_gun": "1.20%",
+            "3_aylik_90_gun": "-0.92%",
+            "6_aylik_180_gun": "-16.82%",
+            "12_aylik_360_gun": "18.32%"
+        }
+    },
+    "KRDMD.IS": {
+        "dun_kapanis": 25.600000381469727,
+        "bugun_kapanis": 24.260000228881836,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 27.139999389648438,
+            "90_gun_once": 25.899999618530273,
+            "180_gun_once": 24.100000381469727,
+            "360_gun_once": 26.040000915527344
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.23%",
+            "aylik_30_gun": "-10.61%",
+            "3_aylik_90_gun": "-6.33%",
+            "6_aylik_180_gun": "0.66%",
+            "12_aylik_360_gun": "-6.84%"
+        }
+    },
+    "LOGO.IS": {
+        "dun_kapanis": 165.8000030517578,
+        "bugun_kapanis": 165.1999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 178.0,
+            "90_gun_once": 164.39999389648438,
+            "180_gun_once": 110.61317443847656,
+            "360_gun_once": 102.2978515625
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.36%",
+            "aylik_30_gun": "-7.19%",
+            "3_aylik_90_gun": "0.49%",
+            "6_aylik_180_gun": "49.35%",
+            "12_aylik_360_gun": "61.49%"
+        }
+    },
+    "MGROS.IS": {
+        "dun_kapanis": 448.5,
+        "bugun_kapanis": 439.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 447.25,
+            "90_gun_once": 498.25,
+            "180_gun_once": 489.890869140625,
+            "360_gun_once": 403.2393493652344
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.01%",
+            "aylik_30_gun": "-1.73%",
+            "3_aylik_90_gun": "-11.79%",
+            "6_aylik_180_gun": "-10.29%",
+            "12_aylik_360_gun": "8.99%"
+        }
+    },
+    "MPARK.IS": {
+        "dun_kapanis": 333.75,
+        "bugun_kapanis": 338.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 360.5,
+            "90_gun_once": 368.75,
+            "180_gun_once": 317.0,
+            "360_gun_once": 319.0
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "1.27%",
+            "aylik_30_gun": "-6.24%",
+            "3_aylik_90_gun": "-8.34%",
+            "6_aylik_180_gun": "6.62%",
+            "12_aylik_360_gun": "5.96%"
+        }
+    },
+    "ODAS.IS": {
+        "dun_kapanis": 5.179999828338623,
+        "bugun_kapanis": 5.300000190734863,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 5.690000057220459,
+            "90_gun_once": 5.190000057220459,
+            "180_gun_once": 4.960000038146973,
+            "360_gun_once": 5.659999847412109
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "2.32%",
+            "aylik_30_gun": "-6.85%",
+            "3_aylik_90_gun": "2.12%",
+            "6_aylik_180_gun": "6.85%",
+            "12_aylik_360_gun": "-6.36%"
+        }
+    },
+    "ONCSM.IS": {
+        "dun_kapanis": 156.39999389648438,
+        "bugun_kapanis": 172.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 119.9000015258789,
+            "90_gun_once": 83.44999694824219,
+            "180_gun_once": 90.5999984741211,
+            "360_gun_once": 96.5999984741211
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "9.97%",
+            "aylik_30_gun": "43.45%",
+            "3_aylik_90_gun": "106.11%",
+            "6_aylik_180_gun": "89.85%",
+            "12_aylik_360_gun": "78.05%"
+        }
+    },
+    "OTKAR.IS": {
+        "dun_kapanis": 450.0,
+        "bugun_kapanis": 431.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 521.0,
+            "90_gun_once": 461.75,
+            "180_gun_once": 392.75,
+            "360_gun_once": 462.5
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-4.11%",
+            "aylik_30_gun": "-17.18%",
+            "3_aylik_90_gun": "-6.55%",
+            "6_aylik_180_gun": "9.87%",
+            "12_aylik_360_gun": "-6.70%"
+        }
+    },
+    "OYAKC.IS": {
+        "dun_kapanis": 21.260000228881836,
+        "bugun_kapanis": 21.219999313354492,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 21.18000030517578,
+            "90_gun_once": 23.84000015258789,
+            "180_gun_once": 27.0,
+            "360_gun_once": 14.410256385803223
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.19%",
+            "aylik_30_gun": "0.19%",
+            "3_aylik_90_gun": "-10.99%",
+            "6_aylik_180_gun": "-21.41%",
+            "12_aylik_360_gun": "47.26%"
+        }
+    },
+    "PETKM.IS": {
+        "dun_kapanis": 19.450000762939453,
+        "bugun_kapanis": 19.899999618530273,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 18.0,
+            "90_gun_once": 17.43000030517578,
+            "180_gun_once": 16.799999237060547,
+            "360_gun_once": 19.079999923706055
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "2.31%",
+            "aylik_30_gun": "10.56%",
+            "3_aylik_90_gun": "14.17%",
+            "6_aylik_180_gun": "18.45%",
+            "12_aylik_360_gun": "4.30%"
+        }
+    },
+    "PGSUS.IS": {
+        "dun_kapanis": 211.1999969482422,
+        "bugun_kapanis": 208.6999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 233.8000030517578,
+            "90_gun_once": 260.75,
+            "180_gun_once": 248.0,
+            "360_gun_once": 236.60000610351562
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.18%",
+            "aylik_30_gun": "-10.74%",
+            "3_aylik_90_gun": "-19.96%",
+            "6_aylik_180_gun": "-15.85%",
+            "12_aylik_360_gun": "-11.79%"
+        }
+    },
+    "SAHOL.IS": {
+        "dun_kapanis": 81.1500015258789,
+        "bugun_kapanis": 78.9000015258789,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 92.0999984741211,
+            "90_gun_once": 91.9000015258789,
+            "180_gun_once": 76.5999984741211,
+            "360_gun_once": 79.74818420410156
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.77%",
+            "aylik_30_gun": "-14.33%",
+            "3_aylik_90_gun": "-14.15%",
+            "6_aylik_180_gun": "3.00%",
+            "12_aylik_360_gun": "-1.06%"
+        }
+    },
+    "SASA.IS": {
+        "dun_kapanis": 3.0199999809265137,
+        "bugun_kapanis": 3.0799999237060547,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 3.9600000381469727,
+            "90_gun_once": 3.2100000381469727,
+            "180_gun_once": 4.230000019073486,
+            "360_gun_once": 3.950000047683716
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "1.99%",
+            "aylik_30_gun": "-22.22%",
+            "3_aylik_90_gun": "-4.05%",
+            "6_aylik_180_gun": "-27.19%",
+            "12_aylik_360_gun": "-22.03%"
+        }
+    },
+    "SISE.IS": {
+        "dun_kapanis": 34.459999084472656,
+        "bugun_kapanis": 33.68000030517578,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 38.79999923706055,
+            "90_gun_once": 36.2599983215332,
+            "180_gun_once": 34.48915481567383,
+            "360_gun_once": 38.8836784362793
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.26%",
+            "aylik_30_gun": "-13.20%",
+            "3_aylik_90_gun": "-7.12%",
+            "6_aylik_180_gun": "-2.35%",
+            "12_aylik_360_gun": "-13.38%"
+        }
+    },
+    "SKBNK.IS": {
+        "dun_kapanis": 6.630000114440918,
+        "bugun_kapanis": 6.599999904632568,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 7.730000019073486,
+            "90_gun_once": 7.170000076293945,
+            "180_gun_once": 5.023055553436279,
+            "360_gun_once": 4.062036991119385
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.45%",
+            "aylik_30_gun": "-14.62%",
+            "3_aylik_90_gun": "-7.95%",
+            "6_aylik_180_gun": "31.39%",
+            "12_aylik_360_gun": "62.48%"
+        }
+    },
+    "SMRTG.IS": {
+        "dun_kapanis": 26.360000610351562,
+        "bugun_kapanis": 26.31999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 28.1200008392334,
+            "90_gun_once": 31.780000686645508,
+            "180_gun_once": 31.700000762939453,
+            "360_gun_once": 34.599998474121094
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-0.15%",
+            "aylik_30_gun": "-6.40%",
+            "3_aylik_90_gun": "-17.18%",
+            "6_aylik_180_gun": "-16.97%",
+            "12_aylik_360_gun": "-23.93%"
+        }
+    },
+    "SOKM.IS": {
+        "dun_kapanis": 37.439998626708984,
+        "bugun_kapanis": 37.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 37.02000045776367,
+            "90_gun_once": 36.5,
+            "180_gun_once": 37.97999954223633,
+            "360_gun_once": 41.0
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "0.16%",
+            "aylik_30_gun": "1.30%",
+            "3_aylik_90_gun": "2.74%",
+            "6_aylik_180_gun": "-1.26%",
+            "12_aylik_360_gun": "-8.54%"
+        }
+    },
+    "TAVHL.IS": {
+        "dun_kapanis": 233.5,
+        "bugun_kapanis": 221.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 244.8000030517578,
+            "90_gun_once": 275.25,
+            "180_gun_once": 236.0,
+            "360_gun_once": 224.1999969482422
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.35%",
+            "aylik_30_gun": "-9.72%",
+            "3_aylik_90_gun": "-19.71%",
+            "6_aylik_180_gun": "-6.36%",
+            "12_aylik_360_gun": "-1.43%"
+        }
+    },
+    "TCELL.IS": {
+        "dun_kapanis": 97.9000015258789,
+        "bugun_kapanis": 90.8499984741211,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 93.6500015258789,
+            "90_gun_once": 94.0999984741211,
+            "180_gun_once": 91.0915298461914,
+            "360_gun_once": 80.82764434814453
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-7.20%",
+            "aylik_30_gun": "-2.99%",
+            "3_aylik_90_gun": "-3.45%",
+            "6_aylik_180_gun": "-0.27%",
+            "12_aylik_360_gun": "12.40%"
+        }
+    },
+    "TERA.IS": {
+        "dun_kapanis": 855.0,
+        "bugun_kapanis": 880.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 658.0,
+            "90_gun_once": 419.0,
+            "180_gun_once": 68.8499984741211,
+            "360_gun_once": 24.059999465942383
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "2.92%",
+            "aylik_30_gun": "33.74%",
+            "3_aylik_90_gun": "110.02%",
+            "6_aylik_180_gun": "1178.14%",
+            "12_aylik_360_gun": "3557.52%"
+        }
+    },
+    "THYAO.IS": {
+        "dun_kapanis": 309.0,
+        "bugun_kapanis": 302.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 331.75,
+            "90_gun_once": 286.300048828125,
+            "180_gun_once": 311.62603759765625,
+            "360_gun_once": 261.8049621582031
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.27%",
+            "aylik_30_gun": "-8.97%",
+            "3_aylik_90_gun": "5.48%",
+            "6_aylik_180_gun": "-3.09%",
+            "12_aylik_360_gun": "15.35%"
+        }
+    },
+    "TKFEN.IS": {
+        "dun_kapanis": 86.19999694824219,
+        "bugun_kapanis": 83.0999984741211,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 89.44999694824219,
+            "90_gun_once": 111.4000015258789,
+            "180_gun_once": 137.10000610351562,
+            "360_gun_once": 69.8499984741211
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.60%",
+            "aylik_30_gun": "-7.10%",
+            "3_aylik_90_gun": "-25.40%",
+            "6_aylik_180_gun": "-39.39%",
+            "12_aylik_360_gun": "18.97%"
+        }
+    },
+    "TOASO.IS": {
+        "dun_kapanis": 257.0,
+        "bugun_kapanis": 249.60000610351562,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 260.5,
+            "90_gun_once": 207.6999969482422,
+            "180_gun_once": 176.5,
+            "360_gun_once": 183.41275024414062
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.88%",
+            "aylik_30_gun": "-4.18%",
+            "3_aylik_90_gun": "20.17%",
+            "6_aylik_180_gun": "41.42%",
+            "12_aylik_360_gun": "36.09%"
+        }
+    },
+    "TRGYO.IS": {
+        "dun_kapanis": 74.0,
+        "bugun_kapanis": 74.25,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 75.4000015258789,
+            "90_gun_once": 70.19999694824219,
+            "180_gun_once": 55.473106384277344,
+            "360_gun_once": 43.245418548583984
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "0.34%",
+            "aylik_30_gun": "-1.53%",
+            "3_aylik_90_gun": "5.77%",
+            "6_aylik_180_gun": "33.85%",
+            "12_aylik_360_gun": "71.69%"
+        }
+    },
+    "TSKB.IS": {
+        "dun_kapanis": 13.010000228881836,
+        "bugun_kapanis": 12.319999694824219,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 14.010000228881836,
+            "90_gun_once": 13.609999656677246,
+            "180_gun_once": 10.40999984741211,
+            "360_gun_once": 11.539999961853027
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.30%",
+            "aylik_30_gun": "-12.06%",
+            "3_aylik_90_gun": "-9.48%",
+            "6_aylik_180_gun": "18.35%",
+            "12_aylik_360_gun": "6.76%"
+        }
+    },
+    "TTKOM.IS": {
+        "dun_kapanis": 51.0,
+        "bugun_kapanis": 49.31999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 52.0,
+            "90_gun_once": 57.150001525878906,
+            "180_gun_once": 52.0,
+            "360_gun_once": 45.720001220703125
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.29%",
+            "aylik_30_gun": "-5.15%",
+            "3_aylik_90_gun": "-13.70%",
+            "6_aylik_180_gun": "-5.15%",
+            "12_aylik_360_gun": "7.87%"
+        }
+    },
+    "TTRAK.IS": {
+        "dun_kapanis": 552.5,
+        "bugun_kapanis": 546.5,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 585.0,
+            "90_gun_once": 600.5,
+            "180_gun_once": 638.0,
+            "360_gun_once": 656.6849975585938
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.09%",
+            "aylik_30_gun": "-6.58%",
+            "3_aylik_90_gun": "-8.99%",
+            "6_aylik_180_gun": "-14.34%",
+            "12_aylik_360_gun": "-16.78%"
+        }
+    },
+    "TUPRS.IS": {
+        "dun_kapanis": 172.5,
+        "bugun_kapanis": 174.10000610351562,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 176.64694213867188,
+            "90_gun_once": 151.26055908203125,
+            "180_gun_once": 120.10453796386719,
+            "360_gun_once": 131.7993621826172
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "0.93%",
+            "aylik_30_gun": "-1.44%",
+            "3_aylik_90_gun": "15.10%",
+            "6_aylik_180_gun": "44.96%",
+            "12_aylik_360_gun": "32.09%"
+        }
+    },
+    "TURSG.IS": {
+        "dun_kapanis": 9.479999542236328,
+        "bugun_kapanis": 9.199999809265137,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 9.460000038146973,
+            "90_gun_once": 8.746255874633789,
+            "180_gun_once": 9.343704223632812,
+            "360_gun_once": 5.969588279724121
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.95%",
+            "aylik_30_gun": "-2.75%",
+            "3_aylik_90_gun": "5.19%",
+            "6_aylik_180_gun": "-1.54%",
+            "12_aylik_360_gun": "54.11%"
+        }
+    },
+    "ULKER.IS": {
+        "dun_kapanis": 102.5,
+        "bugun_kapanis": 99.0,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 109.0,
+            "90_gun_once": 111.69999694824219,
+            "180_gun_once": 100.32270050048828,
+            "360_gun_once": 116.42616271972656
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.41%",
+            "aylik_30_gun": "-9.17%",
+            "3_aylik_90_gun": "-11.37%",
+            "6_aylik_180_gun": "-1.32%",
+            "12_aylik_360_gun": "-14.97%"
+        }
+    },
+    "ULUSN.IS": {
+        "hata": "no_history"
+    },
+    "VAKBN.IS": {
+        "dun_kapanis": 23.1200008392334,
+        "bugun_kapanis": 22.059999465942383,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 28.479999542236328,
+            "90_gun_once": 28.0,
+            "180_gun_once": 20.360000610351562,
+            "360_gun_once": 21.299999237060547
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-4.58%",
+            "aylik_30_gun": "-22.54%",
+            "3_aylik_90_gun": "-21.21%",
+            "6_aylik_180_gun": "8.35%",
+            "12_aylik_360_gun": "3.57%"
+        }
+    },
+    "VESTL.IS": {
+        "dun_kapanis": 32.41999816894531,
+        "bugun_kapanis": 31.81999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 39.0,
+            "90_gun_once": 36.7599983215332,
+            "180_gun_once": 45.5,
+            "360_gun_once": 59.29999923706055
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-1.85%",
+            "aylik_30_gun": "-18.41%",
+            "3_aylik_90_gun": "-13.44%",
+            "6_aylik_180_gun": "-30.07%",
+            "12_aylik_360_gun": "-46.34%"
+        }
+    },
+    "YBTAS.IS": {
+        "dun_kapanis": 25.280000686645508,
+        "bugun_kapanis": 24.31999969482422,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 32.900001525878906,
+            "90_gun_once": 37.33333206176758,
+            "180_gun_once": 56.66583251953125,
+            "360_gun_once": 40.95000076293945
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-3.80%",
+            "aylik_30_gun": "-26.08%",
+            "3_aylik_90_gun": "-34.86%",
+            "6_aylik_180_gun": "-57.08%",
+            "12_aylik_360_gun": "-40.61%"
+        }
+    },
+    "YKBNK.IS": {
+        "dun_kapanis": 30.280000686645508,
+        "bugun_kapanis": 28.760000228881836,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 33.02000045776367,
+            "90_gun_once": 33.29999923706055,
+            "180_gun_once": 22.15999984741211,
+            "360_gun_once": 25.100000381469727
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-5.02%",
+            "aylik_30_gun": "-12.90%",
+            "3_aylik_90_gun": "-13.63%",
+            "6_aylik_180_gun": "29.78%",
+            "12_aylik_360_gun": "14.58%"
+        }
+    },
+    "ZOREN.IS": {
+        "dun_kapanis": 3.240000009536743,
+        "bugun_kapanis": 3.1500000953674316,
+        "gecmis_kapanis_fiyatlari": {
+            "30_gun_once": 3.609999895095825,
+            "90_gun_once": 3.259999990463257,
+            "180_gun_once": 3.3399999141693115,
+            "360_gun_once": 4.190000057220459
+        },
+        "kazandirma_oranlari_yuzde": {
+            "gunluk": "-2.78%",
+            "aylik_30_gun": "-12.74%",
+            "3_aylik_90_gun": "-3.37%",
+            "6_aylik_180_gun": "-5.69%",
+            "12_aylik_360_gun": "-24.82%"
+        }
+    }
+}
